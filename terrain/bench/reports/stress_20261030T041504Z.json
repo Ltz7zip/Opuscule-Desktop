@@ -1,0 +1,3498 @@
+{
+  "utc": "2026-10-30T04:15:04Z",
+  "config": {
+    "tasks": 12,
+    "concurrency": 1,
+    "mem_budget_mb": 480.0,
+    "task_timeout_s": 120.0,
+    "kind": "pack-build",
+    "retry": 0,
+    "degrade_ladder": [
+      2048,
+      1024,
+      512
+    ],
+    "out_dir": "terrain/bench/reports",
+    "seed": 7,
+    "size": 512,
+    "crop_size": 512,
+    "alloc_mb": 0.0,
+    "sleep_s": 0.0,
+    "iters": 24,
+    "resume": false,
+    "warmup": true,
+    "kill_after_s": null,
+    "ledger_name": "ledger_c1.jsonl",
+    "sample_interval_s": 0.2
+  },
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "cpu_count": 11,
+    "python": "3.14.6",
+    "control_plane_rss_mb": 0.4,
+    "note": "本机不是 2C2G；预算用 RLIMIT_AS + RSS 采样模拟，口径为近似"
+  },
+  "rounds": [
+    {
+      "utc": "2026-10-30T04:14:46Z",
+      "concurrency": 1,
+      "config": {
+        "tasks": 12,
+        "concurrency": 1,
+        "mem_budget_mb": 480.0,
+        "task_timeout_s": 120.0,
+        "kind": "pack-build",
+        "retry": 0,
+        "degrade_ladder": [
+          2048,
+          1024,
+          512
+        ],
+        "out_dir": "terrain/bench/reports",
+        "seed": 7,
+        "size": 512,
+        "crop_size": 512,
+        "alloc_mb": 0.0,
+        "sleep_s": 0.0,
+        "iters": 24,
+        "resume": false,
+        "warmup": true,
+        "kill_after_s": null,
+        "ledger_name": "ledger_c1.jsonl",
+        "sample_interval_s": 0.2
+      },
+      "ledger": "terrain/bench/reports/ledger_c1.jsonl",
+      "tasks": [
+        {
+          "task_id": "t0001",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              0,
+              0,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 7
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.441,
+          "rss_mb": 1016.2,
+          "task_mb": 113.6,
+          "base_rss_mb": 902.6,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3408382,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.441,
+              "rss_mb": 1016.2,
+              "task_mb": 113.6,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0002",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              137,
+              211,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 8
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.279,
+          "rss_mb": 1020.2,
+          "task_mb": 0.8,
+          "base_rss_mb": 1016.2,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2957005,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.279,
+              "rss_mb": 1020.2,
+              "task_mb": 0.8,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0003",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              274,
+              422,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 9
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.314,
+          "rss_mb": 1021.0,
+          "task_mb": 0.2,
+          "base_rss_mb": 1017.0,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3105671,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.314,
+              "rss_mb": 1021.0,
+              "task_mb": 0.2,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0004",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              411,
+              633,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 10
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.311,
+          "rss_mb": 1021.2,
+          "task_mb": 0.0,
+          "base_rss_mb": 1017.2,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3246938,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.311,
+              "rss_mb": 1021.2,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0005",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              548,
+              844,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 11
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.548,
+          "rss_mb": 1024.7,
+          "task_mb": 0.0,
+          "base_rss_mb": 1017.2,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3140827,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.548,
+              "rss_mb": 1024.7,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0006",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              685,
+              1055,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 12
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.667,
+          "rss_mb": 1024.7,
+          "task_mb": 69.6,
+          "base_rss_mb": 182.5,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3332284,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.667,
+              "rss_mb": 1024.7,
+              "task_mb": 69.6,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0007",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              822,
+              1266,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 13
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.445,
+          "rss_mb": 1024.7,
+          "task_mb": 25.3,
+          "base_rss_mb": 252.9,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3255392,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.445,
+              "rss_mb": 1024.7,
+              "task_mb": 25.3,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0008",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              959,
+              1477,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 14
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.382,
+          "rss_mb": 1024.7,
+          "task_mb": 0.4,
+          "base_rss_mb": 279.0,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3280042,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.382,
+              "rss_mb": 1024.7,
+              "task_mb": 0.4,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0009",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1096,
+              152,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 15
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.376,
+          "rss_mb": 1024.7,
+          "task_mb": 1.0,
+          "base_rss_mb": 279.3,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2984565,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.376,
+              "rss_mb": 1024.7,
+              "task_mb": 1.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0010",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1233,
+              363,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 16
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.277,
+          "rss_mb": 1024.7,
+          "task_mb": 0.8,
+          "base_rss_mb": 280.4,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2953201,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.277,
+              "rss_mb": 1024.7,
+              "task_mb": 0.8,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0011",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1370,
+              574,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 17
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.296,
+          "rss_mb": 1024.7,
+          "task_mb": 0.0,
+          "base_rss_mb": 281.2,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2889348,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.296,
+              "rss_mb": 1024.7,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0012",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1507,
+              785,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 18
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.262,
+          "rss_mb": 1024.7,
+          "task_mb": 0.1,
+          "base_rss_mb": 281.2,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2782171,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 1,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.262,
+              "rss_mb": 1024.7,
+              "task_mb": 0.1,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        }
+      ],
+      "rss_series": [
+        {
+          "t": 0.02,
+          "parent_mb": 906.6,
+          "children_mb": 904.9,
+          "total_mb": 1811.5,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 0.25,
+          "parent_mb": 906.6,
+          "children_mb": 997.5,
+          "total_mb": 1904.1,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 0.48,
+          "parent_mb": 906.6,
+          "children_mb": 1016.6,
+          "total_mb": 1923.2,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 0.71,
+          "parent_mb": 906.6,
+          "children_mb": 1017.0,
+          "total_mb": 1923.6,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 0.93,
+          "parent_mb": 906.6,
+          "children_mb": 1017.2,
+          "total_mb": 1923.8,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 1.16,
+          "parent_mb": 906.6,
+          "children_mb": 1017.2,
+          "total_mb": 1923.8,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 1.38,
+          "parent_mb": 906.6,
+          "children_mb": 1017.2,
+          "total_mb": 1923.8,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 1.72,
+          "parent_mb": 727.0,
+          "children_mb": 250.9,
+          "total_mb": 977.8,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 2.02,
+          "parent_mb": 265.2,
+          "children_mb": 202.8,
+          "total_mb": 468.0,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 2.29,
+          "parent_mb": 264.2,
+          "children_mb": 268.4,
+          "total_mb": 532.7,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 2.55,
+          "parent_mb": 264.3,
+          "children_mb": 252.9,
+          "total_mb": 517.2,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 2.78,
+          "parent_mb": 265.3,
+          "children_mb": 277.2,
+          "total_mb": 542.5,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 3.03,
+          "parent_mb": 265.3,
+          "children_mb": 279.3,
+          "total_mb": 544.5,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 3.26,
+          "parent_mb": 265.3,
+          "children_mb": 279.3,
+          "total_mb": 544.6,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 3.49,
+          "parent_mb": 265.3,
+          "children_mb": 280.4,
+          "total_mb": 545.7,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 3.72,
+          "parent_mb": 265.3,
+          "children_mb": 280.4,
+          "total_mb": 545.7,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 3.94,
+          "parent_mb": 265.3,
+          "children_mb": 281.4,
+          "total_mb": 546.7,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 4.17,
+          "parent_mb": 265.3,
+          "children_mb": 281.2,
+          "total_mb": 546.5,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 4.39,
+          "parent_mb": 265.3,
+          "children_mb": 281.2,
+          "total_mb": 546.5,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 4.63,
+          "parent_mb": 265.3,
+          "children_mb": 281.3,
+          "total_mb": 546.6,
+          "n_children": 1,
+          "source": "libproc"
+        },
+        {
+          "t": 4.65,
+          "parent_mb": 265.5,
+          "children_mb": 281.2,
+          "total_mb": 546.7,
+          "n_children": 1,
+          "source": "libproc"
+        }
+      ],
+      "summary": {
+        "concurrency": 1,
+        "budget_mb": 480.0,
+        "n_planned": 12,
+        "n_tasks": 12,
+        "n_ok": 12,
+        "n_timeout": 0,
+        "n_oom": 0,
+        "n_error": 0,
+        "n_crashed": 0,
+        "n_failed": 0,
+        "n_degraded": 0,
+        "n_over_budget": 0,
+        "n_skipped": 0,
+        "completion_rate": 1.0,
+        "p50_s": 0.345,
+        "p95_s": 0.602,
+        "mean_s": 0.383,
+        "throughput_tps": 2.581,
+        "wall_s": 4.65,
+        "peak_total_mb": 1923.8,
+        "peak_parent_mb": 906.6,
+        "peak_children_mb": 1017.2,
+        "worker_base_mb": 281.2,
+        "rss_samples": 21,
+        "rss_source": "libproc",
+        "rlimit_modes": {
+          "unsupported": 12
+        }
+      }
+    },
+    {
+      "utc": "2026-10-30T04:14:54Z",
+      "concurrency": 2,
+      "config": {
+        "tasks": 12,
+        "concurrency": 2,
+        "mem_budget_mb": 480.0,
+        "task_timeout_s": 120.0,
+        "kind": "pack-build",
+        "retry": 0,
+        "degrade_ladder": [
+          2048,
+          1024,
+          512
+        ],
+        "out_dir": "terrain/bench/reports",
+        "seed": 7,
+        "size": 512,
+        "crop_size": 512,
+        "alloc_mb": 0.0,
+        "sleep_s": 0.0,
+        "iters": 24,
+        "resume": false,
+        "warmup": true,
+        "kill_after_s": null,
+        "ledger_name": "ledger_c2.jsonl",
+        "sample_interval_s": 0.2
+      },
+      "ledger": "terrain/bench/reports/ledger_c2.jsonl",
+      "tasks": [
+        {
+          "task_id": "t0001",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              0,
+              0,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 7
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.438,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "base_rss_mb": 901.5,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3408380,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.438,
+              "rss_mb": 973.1,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0002",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              137,
+              211,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 8
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.397,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "base_rss_mb": 901.8,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2957002,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.397,
+              "rss_mb": 987.4,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0003",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              274,
+              422,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 9
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.287,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "base_rss_mb": 870.6,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3105670,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.287,
+              "rss_mb": 987.4,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0004",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              411,
+              633,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 10
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.322,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "base_rss_mb": 870.6,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3246937,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.322,
+              "rss_mb": 973.1,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0005",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              548,
+              844,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 11
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.333,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "base_rss_mb": 862.3,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3140827,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.333,
+              "rss_mb": 987.4,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0006",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              685,
+              1055,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 12
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.342,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "base_rss_mb": 865.5,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3332284,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.342,
+              "rss_mb": 973.1,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0007",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              822,
+              1266,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 13
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.303,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "base_rss_mb": 853.1,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3255391,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.303,
+              "rss_mb": 987.4,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0008",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              959,
+              1477,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 14
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.32,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "base_rss_mb": 852.3,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3280041,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.32,
+              "rss_mb": 973.1,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0009",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1096,
+              152,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 15
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.294,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "base_rss_mb": 849.5,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2984565,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.294,
+              "rss_mb": 987.4,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0010",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1233,
+              363,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 16
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.295,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "base_rss_mb": 851.6,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2953201,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.295,
+              "rss_mb": 973.1,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0011",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1370,
+              574,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 17
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.272,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "base_rss_mb": 808.3,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2889348,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.272,
+              "rss_mb": 987.4,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0012",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1507,
+              785,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 18
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.271,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "base_rss_mb": 840.3,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2782171,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 2,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.271,
+              "rss_mb": 973.1,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        }
+      ],
+      "rss_series": [
+        {
+          "t": 0.03,
+          "parent_mb": 265.2,
+          "children_mb": 1830.2,
+          "total_mb": 2095.4,
+          "n_children": 2,
+          "source": "libproc"
+        },
+        {
+          "t": 0.26,
+          "parent_mb": 265.2,
+          "children_mb": 1748.6,
+          "total_mb": 2013.8,
+          "n_children": 2,
+          "source": "libproc"
+        },
+        {
+          "t": 0.5,
+          "parent_mb": 265.2,
+          "children_mb": 1727.1,
+          "total_mb": 1992.3,
+          "n_children": 2,
+          "source": "libproc"
+        },
+        {
+          "t": 0.73,
+          "parent_mb": 265.2,
+          "children_mb": 1727.8,
+          "total_mb": 1993.1,
+          "n_children": 2,
+          "source": "libproc"
+        },
+        {
+          "t": 0.96,
+          "parent_mb": 265.2,
+          "children_mb": 1728.0,
+          "total_mb": 1993.3,
+          "n_children": 2,
+          "source": "libproc"
+        },
+        {
+          "t": 1.19,
+          "parent_mb": 265.3,
+          "children_mb": 1713.6,
+          "total_mb": 1978.9,
+          "n_children": 2,
+          "source": "libproc"
+        },
+        {
+          "t": 1.42,
+          "parent_mb": 265.3,
+          "children_mb": 1701.2,
+          "total_mb": 1966.4,
+          "n_children": 2,
+          "source": "libproc"
+        },
+        {
+          "t": 1.66,
+          "parent_mb": 265.3,
+          "children_mb": 1652.6,
+          "total_mb": 1917.9,
+          "n_children": 2,
+          "source": "libproc"
+        },
+        {
+          "t": 1.89,
+          "parent_mb": 265.3,
+          "children_mb": 1639.5,
+          "total_mb": 1904.8,
+          "n_children": 2,
+          "source": "libproc"
+        },
+        {
+          "t": 2.03,
+          "parent_mb": 265.3,
+          "children_mb": 1639.5,
+          "total_mb": 1904.8,
+          "n_children": 2,
+          "source": "libproc"
+        }
+      ],
+      "summary": {
+        "concurrency": 2,
+        "budget_mb": 480.0,
+        "n_planned": 12,
+        "n_tasks": 12,
+        "n_ok": 12,
+        "n_timeout": 0,
+        "n_oom": 0,
+        "n_error": 0,
+        "n_crashed": 0,
+        "n_failed": 0,
+        "n_degraded": 0,
+        "n_over_budget": 0,
+        "n_skipped": 0,
+        "completion_rate": 1.0,
+        "p50_s": 0.311,
+        "p95_s": 0.415,
+        "mean_s": 0.323,
+        "throughput_tps": 5.924,
+        "wall_s": 2.03,
+        "peak_total_mb": 2095.4,
+        "peak_parent_mb": 265.3,
+        "peak_children_mb": 1830.2,
+        "worker_base_mb": 862.3,
+        "rss_samples": 10,
+        "rss_source": "libproc",
+        "rlimit_modes": {
+          "unsupported": 12
+        }
+      }
+    },
+    {
+      "utc": "2026-10-30T04:15:04Z",
+      "concurrency": 4,
+      "config": {
+        "tasks": 12,
+        "concurrency": 4,
+        "mem_budget_mb": 480.0,
+        "task_timeout_s": 120.0,
+        "kind": "pack-build",
+        "retry": 0,
+        "degrade_ladder": [
+          2048,
+          1024,
+          512
+        ],
+        "out_dir": "terrain/bench/reports",
+        "seed": 7,
+        "size": 512,
+        "crop_size": 512,
+        "alloc_mb": 0.0,
+        "sleep_s": 0.0,
+        "iters": 24,
+        "resume": false,
+        "warmup": true,
+        "kill_after_s": null,
+        "ledger_name": "ledger_c4.jsonl",
+        "sample_interval_s": 0.2
+      },
+      "ledger": "terrain/bench/reports/ledger_c4.jsonl",
+      "tasks": [
+        {
+          "task_id": "t0001",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              0,
+              0,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 7
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.465,
+          "rss_mb": 563.6,
+          "task_mb": 102.2,
+          "base_rss_mb": 461.4,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3408383,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.465,
+              "rss_mb": 563.6,
+              "task_mb": 102.2,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0002",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              137,
+              211,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 8
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.42,
+          "rss_mb": 567.3,
+          "task_mb": 104.5,
+          "base_rss_mb": 461.7,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2957004,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.42,
+              "rss_mb": 567.3,
+              "task_mb": 104.5,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0003",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              274,
+              422,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 9
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.44,
+          "rss_mb": 573.2,
+          "task_mb": 112.8,
+          "base_rss_mb": 460.3,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3105672,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.44,
+              "rss_mb": 573.2,
+              "task_mb": 112.8,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0004",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              411,
+              633,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 10
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.454,
+          "rss_mb": 610.1,
+          "task_mb": 106.6,
+          "base_rss_mb": 460.5,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3246938,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.454,
+              "rss_mb": 610.1,
+              "task_mb": 106.6,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0005",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              548,
+              844,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 11
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.333,
+          "rss_mb": 570.2,
+          "task_mb": 2.6,
+          "base_rss_mb": 566.2,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3140826,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.333,
+              "rss_mb": 570.2,
+              "task_mb": 2.6,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0006",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              685,
+              1055,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 12
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.334,
+          "rss_mb": 578.0,
+          "task_mb": 4.9,
+          "base_rss_mb": 573.1,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3332287,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.334,
+              "rss_mb": 578.0,
+              "task_mb": 4.9,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0007",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              822,
+              1266,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 13
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.332,
+          "rss_mb": 610.1,
+          "task_mb": 2.3,
+          "base_rss_mb": 567.1,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3255393,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.332,
+              "rss_mb": 610.1,
+              "task_mb": 2.3,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0008",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              959,
+              1477,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 14
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.34,
+          "rss_mb": 572.0,
+          "task_mb": 8.4,
+          "base_rss_mb": 563.6,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 3280042,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.34,
+              "rss_mb": 572.0,
+              "task_mb": 8.4,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0009",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1096,
+              152,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 15
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.31,
+          "rss_mb": 576.4,
+          "task_mb": 4.6,
+          "base_rss_mb": 568.7,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2984566,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.31,
+              "rss_mb": 576.4,
+              "task_mb": 4.6,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0010",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1233,
+              363,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 16
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.301,
+          "rss_mb": 582.0,
+          "task_mb": 0.0,
+          "base_rss_mb": 578.0,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2953202,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.301,
+              "rss_mb": 582.0,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0011",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1370,
+              574,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 17
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.294,
+          "rss_mb": 610.1,
+          "task_mb": 0.0,
+          "base_rss_mb": 569.4,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2889350,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.294,
+              "rss_mb": 610.1,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        },
+        {
+          "task_id": "t0012",
+          "kind": "pack-build",
+          "payload": {
+            "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+            "crop": [
+              1507,
+              785,
+              512,
+              512
+            ],
+            "size": 512,
+            "seed": 18
+          },
+          "status": "ok",
+          "attempts": 1,
+          "seconds": 0.279,
+          "rss_mb": 576.0,
+          "task_mb": 0.0,
+          "base_rss_mb": 572.0,
+          "error": null,
+          "degraded_from": null,
+          "degraded_to": null,
+          "size": 512,
+          "bytes": 2782170,
+          "rlimit": "unsupported",
+          "skipped": null,
+          "concurrency": 4,
+          "history": [
+            {
+              "status": "ok",
+              "seconds": 0.279,
+              "rss_mb": 576.0,
+              "task_mb": 0.0,
+              "size": 512,
+              "error": null,
+              "rlimit": "unsupported",
+              "skipped": null
+            }
+          ]
+        }
+      ],
+      "rss_series": [
+        {
+          "t": 0.03,
+          "parent_mb": 100.1,
+          "children_mb": 1891.1,
+          "total_mb": 1991.2,
+          "n_children": 4,
+          "source": "libproc"
+        },
+        {
+          "t": 0.27,
+          "parent_mb": 100.2,
+          "children_mb": 2223.5,
+          "total_mb": 2323.7,
+          "n_children": 4,
+          "source": "libproc"
+        },
+        {
+          "t": 0.51,
+          "parent_mb": 100.8,
+          "children_mb": 2271.3,
+          "total_mb": 2372.1,
+          "n_children": 4,
+          "source": "libproc"
+        },
+        {
+          "t": 0.74,
+          "parent_mb": 100.8,
+          "children_mb": 2288.1,
+          "total_mb": 2388.9,
+          "n_children": 4,
+          "source": "libproc"
+        },
+        {
+          "t": 0.98,
+          "parent_mb": 100.8,
+          "children_mb": 2297.4,
+          "total_mb": 2398.2,
+          "n_children": 4,
+          "source": "libproc"
+        },
+        {
+          "t": 1.12,
+          "parent_mb": 100.9,
+          "children_mb": 2281.2,
+          "total_mb": 2382.1,
+          "n_children": 4,
+          "source": "libproc"
+        }
+      ],
+      "summary": {
+        "concurrency": 4,
+        "budget_mb": 480.0,
+        "n_planned": 12,
+        "n_tasks": 12,
+        "n_ok": 12,
+        "n_timeout": 0,
+        "n_oom": 0,
+        "n_error": 0,
+        "n_crashed": 0,
+        "n_failed": 0,
+        "n_degraded": 0,
+        "n_over_budget": 0,
+        "n_skipped": 0,
+        "completion_rate": 1.0,
+        "p50_s": 0.334,
+        "p95_s": 0.459,
+        "mean_s": 0.359,
+        "throughput_tps": 10.678,
+        "wall_s": 1.12,
+        "peak_total_mb": 2398.2,
+        "peak_parent_mb": 100.9,
+        "peak_children_mb": 2297.4,
+        "worker_base_mb": 567.1,
+        "rss_samples": 6,
+        "rss_source": "libproc",
+        "rlimit_modes": {
+          "unsupported": 12
+        }
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "task_id": "t0001",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          0,
+          0,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 7
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.441,
+      "rss_mb": 1016.2,
+      "task_mb": 113.6,
+      "base_rss_mb": 902.6,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3408382,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.441,
+          "rss_mb": 1016.2,
+          "task_mb": 113.6,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0002",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          137,
+          211,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 8
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.279,
+      "rss_mb": 1020.2,
+      "task_mb": 0.8,
+      "base_rss_mb": 1016.2,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2957005,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.279,
+          "rss_mb": 1020.2,
+          "task_mb": 0.8,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0003",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          274,
+          422,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 9
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.314,
+      "rss_mb": 1021.0,
+      "task_mb": 0.2,
+      "base_rss_mb": 1017.0,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3105671,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.314,
+          "rss_mb": 1021.0,
+          "task_mb": 0.2,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0004",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          411,
+          633,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 10
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.311,
+      "rss_mb": 1021.2,
+      "task_mb": 0.0,
+      "base_rss_mb": 1017.2,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3246938,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.311,
+          "rss_mb": 1021.2,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0005",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          548,
+          844,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 11
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.548,
+      "rss_mb": 1024.7,
+      "task_mb": 0.0,
+      "base_rss_mb": 1017.2,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3140827,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.548,
+          "rss_mb": 1024.7,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0006",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          685,
+          1055,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 12
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.667,
+      "rss_mb": 1024.7,
+      "task_mb": 69.6,
+      "base_rss_mb": 182.5,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3332284,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.667,
+          "rss_mb": 1024.7,
+          "task_mb": 69.6,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0007",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          822,
+          1266,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 13
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.445,
+      "rss_mb": 1024.7,
+      "task_mb": 25.3,
+      "base_rss_mb": 252.9,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3255392,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.445,
+          "rss_mb": 1024.7,
+          "task_mb": 25.3,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0008",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          959,
+          1477,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 14
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.382,
+      "rss_mb": 1024.7,
+      "task_mb": 0.4,
+      "base_rss_mb": 279.0,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3280042,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.382,
+          "rss_mb": 1024.7,
+          "task_mb": 0.4,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0009",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1096,
+          152,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 15
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.376,
+      "rss_mb": 1024.7,
+      "task_mb": 1.0,
+      "base_rss_mb": 279.3,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2984565,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.376,
+          "rss_mb": 1024.7,
+          "task_mb": 1.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0010",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1233,
+          363,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 16
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.277,
+      "rss_mb": 1024.7,
+      "task_mb": 0.8,
+      "base_rss_mb": 280.4,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2953201,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.277,
+          "rss_mb": 1024.7,
+          "task_mb": 0.8,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0011",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1370,
+          574,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 17
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.296,
+      "rss_mb": 1024.7,
+      "task_mb": 0.0,
+      "base_rss_mb": 281.2,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2889348,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.296,
+          "rss_mb": 1024.7,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0012",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1507,
+          785,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 18
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.262,
+      "rss_mb": 1024.7,
+      "task_mb": 0.1,
+      "base_rss_mb": 281.2,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2782171,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 1,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.262,
+          "rss_mb": 1024.7,
+          "task_mb": 0.1,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0001",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          0,
+          0,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 7
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.438,
+      "rss_mb": 973.1,
+      "task_mb": 0.0,
+      "base_rss_mb": 901.5,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3408380,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.438,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0002",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          137,
+          211,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 8
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.397,
+      "rss_mb": 987.4,
+      "task_mb": 0.0,
+      "base_rss_mb": 901.8,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2957002,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.397,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0003",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          274,
+          422,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 9
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.287,
+      "rss_mb": 987.4,
+      "task_mb": 0.0,
+      "base_rss_mb": 870.6,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3105670,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.287,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0004",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          411,
+          633,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 10
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.322,
+      "rss_mb": 973.1,
+      "task_mb": 0.0,
+      "base_rss_mb": 870.6,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3246937,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.322,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0005",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          548,
+          844,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 11
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.333,
+      "rss_mb": 987.4,
+      "task_mb": 0.0,
+      "base_rss_mb": 862.3,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3140827,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.333,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0006",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          685,
+          1055,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 12
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.342,
+      "rss_mb": 973.1,
+      "task_mb": 0.0,
+      "base_rss_mb": 865.5,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3332284,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.342,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0007",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          822,
+          1266,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 13
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.303,
+      "rss_mb": 987.4,
+      "task_mb": 0.0,
+      "base_rss_mb": 853.1,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3255391,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.303,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0008",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          959,
+          1477,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 14
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.32,
+      "rss_mb": 973.1,
+      "task_mb": 0.0,
+      "base_rss_mb": 852.3,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3280041,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.32,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0009",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1096,
+          152,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 15
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.294,
+      "rss_mb": 987.4,
+      "task_mb": 0.0,
+      "base_rss_mb": 849.5,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2984565,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.294,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0010",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1233,
+          363,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 16
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.295,
+      "rss_mb": 973.1,
+      "task_mb": 0.0,
+      "base_rss_mb": 851.6,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2953201,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.295,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0011",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1370,
+          574,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 17
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.272,
+      "rss_mb": 987.4,
+      "task_mb": 0.0,
+      "base_rss_mb": 808.3,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2889348,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.272,
+          "rss_mb": 987.4,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0012",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1507,
+          785,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 18
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.271,
+      "rss_mb": 973.1,
+      "task_mb": 0.0,
+      "base_rss_mb": 840.3,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2782171,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 2,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.271,
+          "rss_mb": 973.1,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0001",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          0,
+          0,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 7
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.465,
+      "rss_mb": 563.6,
+      "task_mb": 102.2,
+      "base_rss_mb": 461.4,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3408383,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.465,
+          "rss_mb": 563.6,
+          "task_mb": 102.2,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0002",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          137,
+          211,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 8
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.42,
+      "rss_mb": 567.3,
+      "task_mb": 104.5,
+      "base_rss_mb": 461.7,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2957004,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.42,
+          "rss_mb": 567.3,
+          "task_mb": 104.5,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0003",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          274,
+          422,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 9
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.44,
+      "rss_mb": 573.2,
+      "task_mb": 112.8,
+      "base_rss_mb": 460.3,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3105672,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.44,
+          "rss_mb": 573.2,
+          "task_mb": 112.8,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0004",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          411,
+          633,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 10
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.454,
+      "rss_mb": 610.1,
+      "task_mb": 106.6,
+      "base_rss_mb": 460.5,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3246938,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.454,
+          "rss_mb": 610.1,
+          "task_mb": 106.6,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0005",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          548,
+          844,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 11
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.333,
+      "rss_mb": 570.2,
+      "task_mb": 2.6,
+      "base_rss_mb": 566.2,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3140826,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.333,
+          "rss_mb": 570.2,
+          "task_mb": 2.6,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0006",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          685,
+          1055,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 12
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.334,
+      "rss_mb": 578.0,
+      "task_mb": 4.9,
+      "base_rss_mb": 573.1,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3332287,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.334,
+          "rss_mb": 578.0,
+          "task_mb": 4.9,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0007",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          822,
+          1266,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 13
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.332,
+      "rss_mb": 610.1,
+      "task_mb": 2.3,
+      "base_rss_mb": 567.1,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3255393,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.332,
+          "rss_mb": 610.1,
+          "task_mb": 2.3,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0008",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          959,
+          1477,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 14
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.34,
+      "rss_mb": 572.0,
+      "task_mb": 8.4,
+      "base_rss_mb": 563.6,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 3280042,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.34,
+          "rss_mb": 572.0,
+          "task_mb": 8.4,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0009",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1096,
+          152,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 15
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.31,
+      "rss_mb": 576.4,
+      "task_mb": 4.6,
+      "base_rss_mb": 568.7,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2984566,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.31,
+          "rss_mb": 576.4,
+          "task_mb": 4.6,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0010",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1233,
+          363,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 16
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.301,
+      "rss_mb": 582.0,
+      "task_mb": 0.0,
+      "base_rss_mb": 578.0,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2953202,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.301,
+          "rss_mb": 582.0,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0011",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1370,
+          574,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 17
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.294,
+      "rss_mb": 610.1,
+      "task_mb": 0.0,
+      "base_rss_mb": 569.4,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2889350,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.294,
+          "rss_mb": 610.1,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    },
+    {
+      "task_id": "t0012",
+      "kind": "pack-build",
+      "payload": {
+        "dem": "/Users/ltz2024/Opuscule Desktop/terrain/output/world_dem.npy",
+        "crop": [
+          1507,
+          785,
+          512,
+          512
+        ],
+        "size": 512,
+        "seed": 18
+      },
+      "status": "ok",
+      "attempts": 1,
+      "seconds": 0.279,
+      "rss_mb": 576.0,
+      "task_mb": 0.0,
+      "base_rss_mb": 572.0,
+      "error": null,
+      "degraded_from": null,
+      "degraded_to": null,
+      "size": 512,
+      "bytes": 2782170,
+      "rlimit": "unsupported",
+      "skipped": null,
+      "concurrency": 4,
+      "history": [
+        {
+          "status": "ok",
+          "seconds": 0.279,
+          "rss_mb": 576.0,
+          "task_mb": 0.0,
+          "size": 512,
+          "error": null,
+          "rlimit": "unsupported",
+          "skipped": null
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "n_rounds": 3,
+    "concurrency_levels": [
+      1,
+      2,
+      4
+    ],
+    "n_planned": 36,
+    "n_ok": 36,
+    "n_timeout": 0,
+    "n_oom": 0,
+    "n_error": 0,
+    "n_crashed": 0,
+    "n_degraded": 0,
+    "completion_rate": 1.0,
+    "peak_total_mb": 2398.2,
+    "best_throughput_tps": 10.678
+  }
+}

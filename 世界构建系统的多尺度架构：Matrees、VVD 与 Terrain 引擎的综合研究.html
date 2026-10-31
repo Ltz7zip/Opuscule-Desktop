@@ -1,0 +1,1685 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>世界构建系统的多尺度架构：Matrees、VVD 与 Terrain 引擎的综合研究</title>
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #f8f7f2; --ink: #171711; --muted: #5e6055; --faint: #8b8d80;
+    --rule: #ddddd1; --soft: #efeee5; --accent: #7a3f1d; --accent-2: #2f6b5e;
+    --accent-soft: #f3e7dc; --night: #0c0d09; --night-ink: #f4f6ea;
+    --warn: #8a5a00; --warn-soft: #fbf3df; --crit: #9e2f2f; --crit-soft: #f8e8e8;
+    --code-bg: #e9e8dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --paper: #141610; --ink: #f0f2e7; --muted: #b4b8a8; --faint: #8d9284;
+      --rule: #2e3128; --soft: #1b1e17; --accent: #e2a174; --accent-2: #8fd0bf;
+      --accent-soft: #2a1d14; --night: #070806; --night-ink: #f4f7ec;
+      --warn: #e0b15a; --warn-soft: #251f10; --crit: #f08a8a; --crit-soft: #271616;
+      --code-bg: #23271d;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.82 ui-serif, "Songti SC", "Noto Serif SC", Georgia, "Times New Roman", serif; text-rendering: optimizeLegibility; }
+  .page { max-width: 90ch; margin: 0 auto; padding: 0 26px 100px; overflow-wrap: break-word; }
+  .hero { margin: 0 0 40px; padding: 58px 26px 42px; background: radial-gradient(900px 300px at 16% -10%, rgba(122, 63, 29, .3), transparent 62%), var(--night); color: var(--night-ink); border-bottom: 3px solid var(--accent-2); }
+  .hero-inner { max-width: 90ch; margin: 0 auto; }
+  .kicker { font: 600 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .16em; text-transform: uppercase; color: #e2a174; margin: 0 0 16px; }
+  h1, h2, h3, h4 { font-family: ui-serif, "Songti SC", "Noto Serif SC", Georgia, serif; font-weight: 600; line-height: 1.28; }
+  h1 { font-size: clamp(32px, 5vw, 50px); margin: 0 0 14px; letter-spacing: -.02em; }
+  .subtitle { font-size: clamp(18px, 2.6vw, 25px); color: #d8dccb; margin: 0 0 18px; font-family: ui-serif, "Songti SC", serif; }
+  .hero .lede { color: #d0d5c4; font-size: 16.5px; line-height: 1.78; margin: 0; max-width: 74ch; }
+  .hero .lede strong { color: #fff; }
+  .hero-meta { margin-top: 24px; color: #9ba18f; font: 12.5px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  h2 { font-size: 27px; margin: 58px 0 14px; padding-top: 14px; border-top: 1px solid var(--rule); }
+  h3 { font-size: 20px; margin: 30px 0 8px; }
+  h4 { font-size: 16.5px; margin: 20px 0 6px; }
+  p { margin: 0 0 15px; }
+  .abstract { margin: 28px 0; padding: 22px 24px; border: 1px solid var(--rule); background: var(--soft); font-size: 15px; line-height: 1.85; }
+  .abstract h3 { margin-top: 0; }
+  .keywords { margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .note { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .badge { display: inline-block; font: 600 10.5px/1.5 ui-monospace, monospace; letter-spacing: .04em; padding: 1px 6px; border-radius: 3px; white-space: nowrap; vertical-align: 1px; }
+  .b-good { color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 12%, var(--paper)); border: 1px solid color-mix(in srgb, var(--accent-2) 30%, transparent); }
+  .b-warn { color: var(--warn); background: var(--warn-soft); border: 1px solid color-mix(in srgb, var(--warn) 28%, transparent); }
+  .b-crit { color: var(--crit); background: var(--crit-soft); border: 1px solid color-mix(in srgb, var(--crit) 28%, transparent); }
+  .toc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 28px; margin: 26px 0 8px; padding: 18px 20px; border: 1px solid var(--rule); font-size: 14px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--rule); padding: 2px 0; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .toc .n { color: var(--faint); font: 10.5px ui-monospace, monospace; margin-right: 7px; }
+  .front-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 28px; margin: 18px 0 28px; }
+  .front-grid > * { min-width: 0; }
+  .box { border: 1px solid var(--rule); padding: 15px 17px; background: var(--paper); min-width: 0; }
+  .box h4 { margin-top: 0; }
+  .box ul { margin-bottom: 0; }
+  .scroll { overflow-x: auto; margin: 16px 0 22px; border: 1px solid var(--rule); background: var(--paper); }
+  table { width: 100%; border-collapse: collapse; font: 13.5px/1.55 system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 11px; border-bottom: 1px solid var(--rule); }
+  th { font: 600 10.5px/1.5 ui-monospace, monospace; letter-spacing: .04em; text-transform: uppercase; color: var(--faint); background: var(--soft); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .87em; background: var(--code-bg); color: var(--ink); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+  pre { margin: 14px 0 20px; padding: 14px 16px; overflow-x: auto; max-width: 100%; background: var(--code-bg); border: 1px solid var(--rule); border-left: 3px solid var(--accent); font: 12px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--ink); }
+  pre code { background: none; padding: 0; font-size: 12px; overflow-wrap: normal; }
+  .equation { margin: 18px 0 10px; padding: 13px 16px 11px; background: var(--soft); border: 1px solid var(--rule); border-left: 3px solid var(--accent); overflow-x: auto; }
+  .equation .eq-label { font: 600 10px/1.5 ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-bottom: 7px; }
+  .equation math { display: block; text-align: center; font-size: 1.08em; font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", "Times New Roman", serif; }
+  .equation .eq-note { font-size: 12.5px; color: var(--muted); margin-top: 7px; line-height: 1.6; }
+  .figure { margin: 24px 0 28px; border: 1px solid var(--rule); background: var(--soft); padding: 14px; }
+  .figure svg { display: block; width: 100%; height: auto; }
+  .figure figcaption { font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.65; }
+  .caption { font-size: 12.5px; color: var(--muted); line-height: 1.6; margin: -8px 0 18px; }
+  .callout { margin: 22px 0; padding: 15px 18px; border: 1px solid var(--rule); border-left: 3px solid var(--accent-2); background: var(--soft); font-size: 14.5px; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+  .callout.crit { border-left-color: var(--crit); background: var(--crit-soft); }
+  .callout p:last-child { margin-bottom: 0; }
+  ul, ol { margin: 10px 0 16px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .tight li { margin: 2px 0; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 28px; }
+  .split > * { min-width: 0; }
+  .quote { margin: 24px 0; padding: 18px 22px; border-left: 3px solid var(--accent); background: var(--night); color: var(--night-ink); font-size: 17px; line-height: 1.75; }
+  .quote small { display: block; margin-top: 8px; font: 11px/1.5 ui-monospace, monospace; color: #9aa38f; }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  .evidence { font-size: 12.5px; color: var(--muted); line-height: 1.65; border-left: 2px solid var(--accent-2); padding-left: 12px; margin: 12px 0 18px; overflow-wrap: anywhere; }
+  .refs { font-size: 13.5px; line-height: 1.75; }
+  .refs li { margin: 8px 0; }
+  .anchor { scroll-margin-top: 20px; }
+  .wide-table { min-width: 760px; }
+  @media (max-width: 760px) {
+    .page { padding: 0 18px 72px; }
+    .hero { margin: 0 0 30px; padding: 38px 18px 30px; }
+    .toc, .front-grid, .split { grid-template-columns: 1fr; }
+    th, td { padding: 8px 9px; }
+    .equation { padding: 10px; }
+    .equation math { font-size: 1em; }
+  }
+  @media print {
+    body { background: #fff; color: #000; }
+    .page { max-width: none; padding: 0; }
+    .hero { background: #000; color: #fff; margin: 0; }
+    h2 { break-after: avoid; }
+    .scroll, .callout, .quote, .figure, .equation, .abstract { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hero-inner">
+    <p class="kicker">Research monograph · dissertation-style synthesis · 2026-10-22</p>
+    <h1>世界构建系统的多尺度架构</h1>
+    <div class="subtitle">Matrees、VVD 与 Terrain 引擎的综合研究：地图、时间、模拟与协作</div>
+    <p class="lede">本文把五份技术报告与源码分析合并为一篇研究型专著：以<strong>“真实、可读、可协作、可部署”</strong>四种目标之间的张力为核心问题，比较 Matrees 的地图工作台、VVD 的文档工作台与 Terrain 的物理地形引擎，提出<strong>三平面模型</strong>与<strong>Pro / Lite / Web</strong> 三级产品架构。</p>
+    <p class="hero-meta">研究型专著 · 博士论文式结构，但不是实际提交的学位论文 · 证据来自源码、REA 静态分析、公开 API/UI 与技术文档 · 未执行捕获的应用 JavaScript，未修改 Matrees/VVD 内容</p>
+  </div>
+</div>
+
+<main class="page">
+
+  <div class="abstract">
+    <h3>摘要</h3>
+    <p>世界构建（worldbuilding）工作站需要在四个目标之间取舍：世界本身的物理/叙事真实性、地图与时间的可读性、多人协作与治理、以及可负担的部署成本。现有系统通常只优化其中一两个目标：Matrees 以 2048² 地形、六类地图要素、多历法事件与提案审核，构建了“世界本体 + 治理”的纵向系统；VVD 以卡片/文档/块与 Yjs 实时协作，构建了“低摩擦 + 横向组合”的文档工作台；Terrain v12 以 450 Myr 板块演化、条件 GAN 与气候/水文链，构建了“物理骨架 + 学习纹理”的地形引擎。本文通过源码级逆向、比较案例研究与设计科学研究，提出“三平面模型”（模拟平面、表示平面、社会平面）解释三者的差异；进一步把 Terrain 拆成物理参考（Pro）、设备端近似（Lite）与服务端摊销生成（Web）三种模型族，并给出 2C2G 控制面 + GPU worker 的部署拓扑。结论是：世界构建系统的竞争力不取决于单一地图生成算法，而取决于能否把<strong>世界真值、语义层、时间模型、交互与治理</strong>组织成一套可分层交付的架构。</p>
+    <p><strong>关键词：</strong>世界构建；程序化地形；地图工作台；多历法时间线；协作治理；设计科学；数字人文</p>
+  </div>
+
+  <nav class="toc" aria-label="目录">
+    <a href="#ch1"><span class="n">第 1 章</span>绪论：问题、问题域与方法</a>
+    <a href="#ch2"><span class="n">第 2 章</span>分析框架：三平面与证据等级</a>
+    <a href="#ch3"><span class="n">第 3 章</span>Matrees：地形工作台的技术深拆</a>
+    <a href="#ch4"><span class="n">第 4 章</span>VVD 与 Matrees：两种实现哲学</a>
+    <a href="#ch5"><span class="n">第 5 章</span>Terrain：从板块演化到地图产品</a>
+    <a href="#ch6"><span class="n">第 6 章</span>粗糙感诊断：尺度、语义与策展</a>
+    <a href="#ch7"><span class="n">第 7 章</span>综合架构：世界图、瓦片与三产品线</a>
+    <a href="#ch8"><span class="n">第 8 章</span>评估、路线图与风险</a>
+    <a href="#ch9"><span class="n">第 9 章</span>结论、贡献与未来工作</a>
+    <a href="#refs"><span class="n">附录</span>参考文献、公式与术语</a>
+  </nav>
+
+  <div class="front-grid">
+    <div class="box"><h4>研究问题</h4><ul class="tight"><li>RQ1：Matrees/VVD 的地图、时间与协作原语是什么？</li><li>RQ2：为什么程序生成地图“看起来更粗糙”？</li><li>RQ3：物理引擎如何在局部/全球/2D/3D 间保持一致？</li><li>RQ4：如何在 2C2G 与 8 秒约束下保留语义/时间/交互？</li></ul></div>
+    <div class="box"><h4>核心贡献</h4><ul class="tight"><li>三平面分析框架与证据等级；</li><li>Matrees/VVD 的源码级比较；</li><li>Terrain 的公式化与源码映射；</li><li>Pro/Lite/Web 三模型族与部署拓扑。</li></ul></div>
+  </div>
+
+  <h2 id="ch1" class="anchor">第 1 章 · 绪论：问题、问题域与方法</h2>
+
+  <h3>1.1 研究背景：从“画一张地图”到“维护一个世界”</h3>
+
+  <p>世界构建工具大致经历了三个阶段。第一阶段是<strong>绘图工具</strong>：PSD/图片 + 标注，作者用美术能力换表达力。第二阶段是<strong>结构化工作台</strong>：把地点、事件、人物、历法变成对象，地图与时间线成为可查询的视图。第三阶段是<strong>生成式世界引擎</strong>：用板块、气候、水文、GAN 生成地形，再把它接入地图与叙事。Matrees 位于第二、三阶段之间；VVD 位于第一、二阶段之间；Terrain 位于第三阶段，但缺少前两个阶段的产品层。</p>
+
+  <p>这带来一个核心矛盾：<strong>真实度、可读性、协作性与部署成本通常互相拉扯</strong>。物理越真实，生成越慢、越难编辑；地图越漂亮，越依赖人工美术；协作越实时，越难保证设定一致性；部署越便宜，越难跑重模型。本文要回答的不是“谁最强”，而是“怎样分层，才能让不同用户在各自预算内得到足够好的世界”。</p>
+
+  <h3>1.2 研究问题</h3>
+
+  <ol>
+    <li><strong>RQ1（架构）：</strong>Matrees 与 VVD 如何分别建模地图、时间线与历法？它们的对象模型、写入路径与协作机制有什么本质差异？</li>
+    <li><strong>RQ2（感知）：</strong>为什么 Terrain v12 已经能生成 2048² 地形，却仍被认为“不如 Matrees 好看”？粗糙感来自算法、尺度、语义还是策展？</li>
+    <li><strong>RQ3（一致性）：</strong>如何让同一份世界数据同时支持局部 2048、全球瓦片、2D 地图与高精度 3D，而不出现“局部/全球不一致”？</li>
+    <li><strong>RQ4（约束）：</strong>如何在 2 核 2G 服务器、核显/手机与服务端 8 秒预算下，保留语义层、时间/演化、交互、协作/发布与视觉风格？</li>
+  </ol>
+
+  <h3>1.3 方法论：设计科学研究 + 比较案例 + 源码逆向</h3>
+
+  <p>本文采用设计科学研究（Design Science Research）的“构建—评估”循环：先通过源码/API/文档逆向建立案例模型，再提出架构 artifact，最后用需求矩阵、性能预算与风险分析评估。案例选择是理论抽样，不是统计抽样：Matrees 代表“地形深度 + 治理”，VVD 代表“文档低摩擦 + 实时协作”，Terrain 代表“物理模拟 + 生成式纹理”。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>证据等级</th><th>来源</th><th>可信度</th><th>本文用法</th></tr></thead>
+      <tbody>
+        <tr><td>E1 代码</td><td>下载的 JS chunk、Python 源码、常量、函数、测试</td><td>强</td><td>架构、公式、布局、数据格式</td></tr>
+        <tr><td>E2 API/UI 观察</td><td>登录态工作台、公开 API 样本、真实事件/历法</td><td>强—中</td><td>字段、流程、显示片段</td></tr>
+        <tr><td>E3 官方文档/Changelog</td><td>Help Center、发布说明、产品页</td><td>中</td><td>产品意图、未公开实现</td></tr>
+        <tr><td>E4 推断</td><td>由 UI/模型反推的布局/算法</td><td>弱—中</td><td>明确标注“推断”，不与 E1 混用</td></tr>
+        <tr><td>E5 源码但未运行</td><td>Terrain 仓库（缺权重/数据/输出）</td><td>中—强（实现）/未知（输出）</td><td>公式与管线；不做像素级结论</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="caption">表 1 · 证据等级。Matrees 的 13 个 JS chunk（354,115 字节、115,661 AST 节点、1,104 findings）与 VVD 的 9 个 chunk（2.28MB、625,834 AST 节点）均只做静态分析；REA 覆盖为 partial，不能把 unknown 当事实。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>对象</th><th>chunk/字节</th><th>AST</th><th>关系/发现</th><th>覆盖</th></tr></thead>
+      <tbody>
+        <tr><td>Matrees</td><td>13 / 354,115</td><td>115,661</td><td>4,679 call-flow；8,533 closure；75,661 data-flow；317 promise；40 timer；1,104 findings</td><td>partial；24,341 unknown</td></tr>
+        <tr><td>VVD</td><td>9 / 2.28MB</td><td>625,834</td><td>5,953 call-flow；23,813 closure；86,834 data-flow；3 个大文件超解析上限</td><td>partial</td></tr>
+        <tr><td>Terrain</td><td>Python 仓库；450 Myr/720 步；512² 模拟</td><td>—</td><td>源码/文档；无权重/数据/输出</td><td>实现强；运行未知</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="caption">表 E1 · 静态分析覆盖。数字大不等于结论强：调用/数据流图仍需语义阅读；unknown 不能当“没有”。</p>
+
+  <h3>1.4 贡献与边界</h3>
+
+  <p>本文的贡献是<strong>架构性</strong>而非“新算法 SOTA”：它把三个案例放进同一个分析框架，给出可实施的分层、模型族与部署策略。边界同样明确：没有做用户实验；没有运行 Matrees/VVD 的捕获 JS；Terrain 没有权重/输出，无法做像素级质量评测；所有性能数字是目标预算或仓库自报，不是同一 benchmark。</p>
+
+  <h3>1.5 论文结构</h3>
+
+  <p>第 2 章建立三平面框架与证据等级；第 3 章拆 Matrees 的地图、时间线、历法与治理；第 4 章把 VVD 与 Matrees 放在同一组维度上比较；第 5 章拆 Terrain 的算法、公式与 Pro/Lite/Web 三种模型族；第 6 章解释“为什么生成器显得粗糙”；第 7 章给出综合架构与部署矩阵；第 8 章给出需求覆盖、性能预算、路线图与风险；第 9 章总结贡献与未来工作。附录给出公式/源码映射、术语与研究限制。</p>
+
+  <p>本文刻意避免“功能清单式”写作：每个功能都要回答它在三平面中的位置、由谁付费、失败时如何降级。这也是设计科学研究与产品宣传的分界线。</p>
+
+  <h2 id="ch2" class="anchor">第 2 章 · 分析框架：三平面与证据等级</h2>
+
+  <h3>2.1 三平面模型</h3>
+
+  <p>本文把世界构建系统拆成三个相互耦合但可分离的平面：</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 960 380" role="img" aria-label="世界构建系统的三平面模型：模拟平面、表示平面、社会平面">
+      <defs><marker id="f1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <g font-family="system-ui, sans-serif" font-size="12" fill="#171711">
+        <rect x="30" y="35" width="270" height="95" rx="6" fill="#e8f0ed" stroke="#2f6b5e"/>
+        <text x="48" y="61" font-weight="700">模拟平面 · Truth</text>
+        <text x="48" y="82" fill="#5f6156">板块 / 气候 / 水文 / 侵蚀 / GAN</text>
+        <text x="48" y="102" fill="#5f6156">回答“世界为什么是这样”</text>
+        <text x="48" y="120" fill="#5f6156">Terrain 的主场</text>
+
+        <rect x="345" y="35" width="270" height="95" rx="6" fill="#f3e7dc" stroke="#7a3f1d"/>
+        <text x="363" y="61" font-weight="700">表示平面 · Representation</text>
+        <text x="363" y="82" fill="#5f6156">地图 / 瓦片 / 要素 / 标签 / 时间线</text>
+        <text x="363" y="102" fill="#5f6156">回答“人怎么读这个世界”</text>
+        <text x="363" y="120" fill="#5f6156">Matrees 的主场</text>
+
+        <rect x="660" y="35" width="270" height="95" rx="6" fill="#fbf3df" stroke="#8a5a00"/>
+        <text x="678" y="61" font-weight="700">社会平面 · Social</text>
+        <text x="678" y="82" fill="#5f6156">协作 / 提案 / 审核 / 发布 / 权限</text>
+        <text x="678" y="102" fill="#5f6156">回答“谁有权改、何时生效”</text>
+        <text x="678" y="120" fill="#5f6156">Matrees/VVD 的分野</text>
+        <path d="M300 82 H345 M615 82 H660" stroke="#7a3f1d" stroke-width="1.4" marker-end="url(#f1)"/>
+
+        <rect x="30" y="175" width="900" height="70" rx="6" fill="#fff" stroke="#ddddd1"/>
+        <text x="48" y="201" font-weight="700">四目标张力</text>
+        <text x="48" y="223" fill="#5f6156">真实度（模拟成本） ↔ 可读性（表示/语义） ↔ 协作性（治理/实时） ↔ 可部署性（算力/延迟）</text>
+
+        <rect x="30" y="280" width="285" height="62" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="46" y="303" font-weight="600">Matrees</text>
+        <text x="46" y="322" fill="#5f6156">表示 + 社会强；模拟中等</text>
+        <rect x="338" y="280" width="285" height="62" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="354" y="303" font-weight="600">VVD</text>
+        <text x="354" y="322" fill="#5f6156">社会 + 表示低摩擦；模拟弱</text>
+        <rect x="646" y="280" width="284" height="62" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="662" y="303" font-weight="600">Terrain</text>
+        <text x="662" y="322" fill="#5f6156">模拟强；表示/社会弱</text>
+      </g>
+    </svg>
+    <div class="caption">图 1 · 三平面模型。好的世界构建产品不是让一个平面无限膨胀，而是让三个平面通过稳定的接口耦合。</div>
+  </div>
+
+  <h3>2.2 评价维度</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>维度</th><th>问题</th><th>可观察指标</th></tr></thead>
+      <tbody>
+        <tr><td>世界真值</td><td>地形/气候/水文是否自洽、可复现？</td><td>seed、守恒、切片一致性、provenance</td></tr>
+        <tr><td>地图表示</td><td>局部/全球/2D/3D 是否一致、可读？</td><td>分辨率、瓦片接缝、标签碰撞、LOD</td></tr>
+        <tr><td>语义</td><td>区域/城市/道路/事件是否可查、可编辑？</td><td>feature 类型、链接、查询、摘要</td></tr>
+        <tr><td>时间</td><td>多历法/纪元/事件/演化是否可读？</td><td>换算、显示片段、布局、时间切片</td></tr>
+        <tr><td>交互</td><td>缩放/平移/点选/编辑是否低摩擦？</td><td>首屏、命中、编辑器步骤</td></tr>
+        <tr><td>协作/治理</td><td>多人如何改、如何审、如何发布？</td><td>实时/提案/审计/权限</td></tr>
+        <tr><td>部署</td><td>在 2C2G/核显/手机上能否成立？</td><td>RSS、延迟、缓存、GPU 成本</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>2.3 三条技术谱系</h3>
+
+  <p><strong>程序化地形谱系</strong>从噪声/分形、侵蚀、板块构造到 GAN/扩散。它的评价标准是“地质可信、尺度一致、可复现”；缺点是“像地形”不等于“像地图”。<strong>地图工作台谱系</strong>从 GIS/图层/要素到插画/PSD；它的评价标准是“可读、可编辑、可发布”；缺点是地形真值弱。<strong>协作知识谱系</strong>从 Wiki/文档到 CRDT/实时；它的评价标准是“低摩擦、可追溯、可治理”；缺点是空间/时间语义弱。</p>
+
+  <p>Matrees 站在第一与第二谱系的交叉：有 heightmap/河流算法，也有 region/city/route 与提案审核。VVD 站在第二与第三谱系的交叉：地图是图像+SVG 注释，文档/卡片/实时协作很强。Terrain 站在第一谱系的深处：物理/生成强，但第二/第三谱系几乎为空。三者的差异不是“功能多少”，而是“站在哪条谱系的深处”。</p>
+
+  <h3>2.4 研究缺口</h3>
+
+  <ol>
+    <li><strong>表示缺口：</strong>物理地形如何变成“可读地图”（局部尺度、语义、标签、图例），缺少系统化设计。</li>
+    <li><strong>时间缺口：</strong>地图工作台有历法/事件，地形引擎有 450 Myr，但两者没有共享的时间模型。</li>
+    <li><strong>协作缺口：</strong>实时 CRDT 与提案治理各有优势，缺少“草稿实时 + 发布审核”的混合模型。</li>
+    <li><strong>部署缺口：</strong>物理生成、设备端、2C2G 与 8 秒在线被当成同一问题；缺少模型族/算力分层。</li>
+  </ol>
+
+  <p>本文的贡献正是围绕这四个缺口：三平面框架（表示/时间/协作/部署），以及 Pro/Lite/Web 的模型族与部署矩阵。</p>
+
+  <h3>2.5 定义与符号</h3>
+
+  <p>为了避免“地图”“世界”“模型”在不同章节指不同东西，先给出四个工作定义。</p>
+
+  <div class="callout"><p><strong>定义 1（世界图）：</strong>世界图是一个带类型的属性图 <i>G=(V,E,τ,α)</i>。V 是实体（世界、卡片、定义、事件、地图、时间线、资产）；E 是关系（属于、链接、发生于、引用）；τ 是类型；α 是属性。它回答“这个世界由什么组成”。</p></div>
+
+  <div class="callout"><p><strong>定义 2（地图文档）：</strong>地图文档 <i>M=(B,F,S,T)</i>。B 是基场（heightmap/图片/SeedPack）；F 是要素集合（region/city/pin/river/route/stamp）；S 是样式（palette/light/labels）；T 是瓦片/LOD 树。它回答“这个世界怎么被看见”。</p></div>
+
+  <div class="callout"><p><strong>定义 3（时间模型）：</strong>时间模型 <i>H=(C,E,Σ)</i>。C 是历法集合；E 是事件/纪元；Σ 是模拟时间切片。它回答“事情何时发生、地图属于哪个时代”。</p></div>
+
+  <div class="callout"><p><strong>定义 4（模型族）：</strong>模型族 <i>A=(B,Φ,Θ)</i>。B 是共享基场；Φ 是残差/生成器（程序化、GAN、条件生成）；Θ 是参数。它回答“在给定算力下，怎样近似世界”。</p></div>
+
+  <h3>2.6 公式的六问与实现步骤</h3>
+
+  <p>本文不把公式当装饰。每个模型都按同一组问题检查；这套检查也直接对应代码里的函数、参数与测试。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>问题</th><th>要写清楚什么</th><th>落到代码/验证</th></tr></thead>
+      <tbody>
+        <tr><td>Q1 状态/变量</td><td>输入、输出、单位、索引/维度、边界</td><td>类型标注、shape 断言、单位表</td></tr>
+        <tr><td>Q2 方程来源</td><td>物理、经验拟合、统计校准、学习先验</td><td>注释/论文引用/参数来源</td></tr>
+        <tr><td>Q3 离散化</td><td>网格、时间步、插值、积分/差分格式</td><td>数组布局、循环/向量化、误差阶</td></tr>
+        <tr><td>Q4 参数标定</td><td>默认值、范围、敏感性、Earth 偏置</td><td>配置、扫描实验、回归测试</td></tr>
+        <tr><td>Q5 边界/异常</td><td>极区、海岸、无数据、负年份、除零</td><td>clamp/epsilon、错误返回、fallback</td></tr>
+        <tr><td>Q6 验证</td><td>守恒、形态、视觉、性能、盲评</td><td>单测、指标、基准、用户实验</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="caption">表 M1 · 公式六问。后文每个公式都至少回答 Q1/Q2/Q5；关键的再补 Q3/Q4/Q6。</p>
+
+  <h3>2.7 三个命题：尺度、8 秒与误差</h3>
+
+  <p><strong>命题 1（有效分辨率）：</strong>若区域宽度为 L、画布像素为 N，则每像素覆盖 δ=L/N。全球 2048 与局部 2048 的差异不是“像素数”，而是 L。证明是定义展开；推论是：把全球 2048 放大到局部 2048 不会恢复已丢失的高频信息（采样定理/信息损失）。</p>
+
+  <p><strong>命题 2（8 秒可行性）：</strong>在线生成时间 <i>T<sub>web</sub>=T<sub>lookup</sub>+T<sub>base</sub>+T<sub>tile</sub>+T<sub>style</sub>+T<sub>encode</sub></i>。若要求 p95 ≤10s，则必须让 T<sub>base</sub> 接近 0（缓存/预计算）且 T<sub>tile</sub> 受控；若 T<sub>base</sub> 包含 450 Myr 全量模拟，命题不成立。8 秒不是算法常数，是“缓存 + 局部生成”的系统约束。</p>
+
+  <p><strong>命题 3（摊销误差）：</strong>令 z<sub>P</sub> 为 Pro 参考，z<sub>A</sub>=B<sub>s</sub>+R 为 Lite/Web 近似，则 <i>||z<sub>A</sub>−z<sub>P</sub>|| ≤ ||B<sub>s</sub>−z<sub>P</sub>|| + ||R||</i>（三角不等式）。因此基场误差是下限；再强的局部生成器也不能弥补错误的全球骨架。这条命题直接决定“先共享 SeedPack，再做局部残差”的顺序。</p>
+
+  <h2 id="ch3" class="anchor">第 3 章 · Matrees：地形工作台的技术深拆</h2>
+
+  <h3>3.1 总架构：世界本体 + 三条链路</h3>
+
+  <p>Matrees 是 Vue 3 + Pinia + Ant Design Vue Next 的工作台<sup>[1][2]</sup>，核心不是“地图页面”，而是<strong>世界本体（World）+ 对象（Concept/Definition/Event/Calendar/Map/Work）+ 提案网关</strong>。地图、时间线、历法不是三个页面，而是三条共享对象模型的链路：地图要素可以链接定义/事件；事件日期依赖历法；所有写入最终经过 proposal/audit。</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 960 340" role="img" aria-label="Matrees 总架构：地图、时间线、历法与提案网关">
+      <defs><marker id="f2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <g font-family="system-ui, sans-serif" font-size="11.5" fill="#171711">
+        <rect x="20" y="30" width="170" height="62" rx="5" fill="#f3e7dc" stroke="#7a3f1d"/>
+        <text x="34" y="52" font-weight="700">世界本体</text>
+        <text x="34" y="70" fill="#5f6156">Concept / Definition</text>
+        <text x="34" y="86" fill="#5f6156">Event / Calendar / Work</text>
+        <rect x="220" y="30" width="210" height="62" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="234" y="52" font-weight="700">地图文档</text>
+        <text x="234" y="70" fill="#5f6156">heightmap + features + digest</text>
+        <text x="234" y="86" fill="#5f6156">content-addressed blobs</text>
+        <rect x="460" y="30" width="210" height="62" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="474" y="52" font-weight="700">时间线</text>
+        <text x="474" y="70" fill="#5f6156">year + month/day fraction</text>
+        <text x="474" y="86" fill="#5f6156">row packing / lazy load</text>
+        <rect x="700" y="30" width="240" height="62" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="714" y="52" font-weight="700">历法</text>
+        <text x="714" y="70" fill="#5f6156">type 1/2 + ratio/baseYear</text>
+        <text x="714" y="86" fill="#5f6156">displayTime / yearToZero</text>
+        <path d="M190 61 H220 M430 61 H460 M670 61 H700" stroke="#7a3f1d" stroke-width="1.3" marker-end="url(#f2)"/>
+
+        <rect x="20" y="130" width="920" height="80" rx="5" fill="#fff" stroke="#ddddd1"/>
+        <text x="36" y="154" font-weight="700">共享对象：Feature link → Definition / Event；Event → Calendar；Map pin → Event</text>
+        <text x="36" y="176" fill="#5f6156">读路径：地图 pin → 定义/事件 → 历法显示片段 → 时间线；写路径：地图/事件 → Proposal → Audit → 列表</text>
+        <text x="36" y="196" fill="#5f6156">历法是例外：/mt/calendar/* 直接写，不经过 proposal；这是治理上的一个“硬边”，也是风险点。</text>
+
+        <rect x="20" y="245" width="450" height="65" rx="5" fill="#fbf3df" stroke="#8a5a00"/>
+        <text x="36" y="268" font-weight="700">读：SSR / JSON-LD / MCP</text>
+        <text x="36" y="288" fill="#5f6156">公开世界、设定、事件、地图；机器可读</text>
+        <rect x="490" y="245" width="450" height="65" rx="5" fill="#fbf3df" stroke="#8a5a00"/>
+        <text x="506" y="268" font-weight="700">写：Proposal + Audit + Role</text>
+        <text x="506" y="288" fill="#5f6156">owner / admin / auditor / co-creator；乐观并发 baseDocHash</text>
+      </g>
+    </svg>
+    <div class="caption">图 2 · Matrees 的三条链路与提案网关。地图/时间线的“深度”来自共享对象，不是页面功能堆叠。</div>
+  </div>
+
+  <h3>3.2 地图：三种地图、2048 世界坐标、内容寻址文档</h3>
+
+  <p>Matrees 支持三种地图：<strong>image</strong>（上传图片，约 4MB）、<strong>PSD</strong>（WASM 解析、图层/调色/导出）、<strong>vector</strong>（在线生成 2048² heightmap + 要素）。坐标系统一为<strong>左下原点、x 向东、y 向北、0–2048</strong>，编辑器 canvas 坐标与地图世界坐标分离：</p>
+
+  <pre><code>// editor canvas -> world (mapSize = 2048)
+worldX = editorX
+worldY = 2048 - editorY
+// general scale
+unit = 2048 / mapSize
+worldX = editorX / unit
+worldY = (2048 - editorY) / unit</code></pre>
+
+  <p>地图存储不是一张图，而是<strong>内容寻址的文档仓库</strong>：manifestHash 指向 chunkHashes、vectorHash、digestHash；上传前先问 missing，只传缺失块，单批 ≤12MB；IndexedDB 缓存草稿；改一条河流不需要重传整张地形。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>层</th><th>内容</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td>manifest</td><td>chunkHashes + vectorHash + digestHash</td><td>地图文档根；mapDocHash 用于乐观并发</td></tr>
+        <tr><td>chunks</td><td>地形/高度图分块，SHA-256</td><td>增量保存/加载</td></tr>
+        <tr><td>vector</td><td>region/city/pin/river/route/stamp</td><td>语义与编辑</td></tr>
+        <tr><td>digest</td><td>64×64 地形/群系摘要 + 统计 + 邻接</td><td>AI/搜索/预览/导航的索引层</td></tr>
+        <tr><td>snapshot</td><td>2048² WebP</td><td>列表/分享的快速预览</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>3.3 渲染与要素：Leaflet 管视口，WebGL/2D 管内容</h3>
+
+  <p>Flat 视图用 Leaflet CRS.Simple 管平移/缩放，自定义 renderer 叠加两层 canvas：底层 WebGL2 地形，上层 2D 要素；globe 用 yaw/pitch/dist 相机；relief/coast 等重计算在 Worker；pick 顺序为 pin → city → stamp → region。六类要素构成地图的语义骨架：</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>kind</th><th>几何/字段</th><th>约束/算法</th></tr></thead>
+      <tbody>
+        <tr><td>region</td><td>polygon（≥3 点）、color、tier</td><td>可嵌套；摘要按重叠面积推断 parent；邻接由 256 网格扫描</td></tr>
+        <tr><td>city</td><td>pos、capital</td><td>必须落在陆地（isWet 检查）；自动记录所在 region</td></tr>
+        <tr><td>pin</td><td>pos、link</td><td>最轻标记；链接定义/事件；10/13px 热区</td></tr>
+        <tr><td>river</td><td>points（≥2）、carve</td><td>可雕刻地形；自动生成用 flow accumulation</td></tr>
+        <tr><td>route</td><td>points、style/width/closed/smooth</td><td>道路/航线；摘要记录经过的 region</td></tr>
+        <tr><td>stamp</td><td>asset、pos、size/rotation/flip/tint</td><td>单点或区域内散布；最多 400 个，按距离去重</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>3.4 地图生成算法：从参数到河流</h3>
+
+  <p>参数生成的真实字段包括陆地比例 32%、大陆数 2、山脉 70%、群岛度 0.45、风向 25°、模式 tectonic/historical。生成器通过 synth.worker 产出高度图/群系，再做两遍侵蚀（强度默认 0.55）。自动河流不是“画线”，而是：</p>
+
+  <ol>
+    <li>以约 size/28 为网格步长，找高于海平面 +0.03 的候选泉眼；</li>
+    <li>按高度从高到低排序，做 flow accumulation；</li>
+    <li>只保留路径长度 ≥ minFlux（默认 8 格）的河流；</li>
+    <li>河流数量夹在 1–12（默认 3）；沿路径雕刻地形，洼地形成湖泊；</li>
+    <li>找不到入海泉眼时返回明确错误，而不是静默失败。</li>
+  </ol>
+
+  <p>区域 tier 1/2/3、道路 smooth/width/closed、印章 scatter 的拒绝采样，共同构成“地图不是背景图，而是可查询的空间数据”。这也是 Matrees 与纯图片地图的根本差异。</p>
+
+  <h3>3.4.1 写入治理：地图/事件走提案，历法直接写</h3>
+
+  <p>Matrees 的“世界一致性”不是靠数据库约束自动保证，而是靠<strong>提案 + 审核 + baseDocHash 乐观并发</strong>。地图/定义/事件写入 proposal；owner/admin 审核；auditor 可读；co-creator 可提案。地图文档用 <code>mapDocHash</code> 做“我改的是哪一版”的并发令牌；服务端发现 baseDocHash 过期就拒绝，避免覆盖别人的修改。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>角色/状态</th><th>权限</th><th>典型动作</th><th>风险</th></tr></thead>
+      <tbody>
+        <tr><td>owner</td><td>世界设置、成员、审核、发布</td><td>改权限、批准提案、公开 Wiki</td><td>单人瓶颈；审计不可篡改未做</td></tr>
+        <tr><td>admin</td><td>审核/编辑</td><td>处理提案、修地图</td><td>与 owner 权限边界需清晰</td></tr>
+        <tr><td>auditor</td><td>只读 + 审计</td><td>查看历史/版本</td><td>无法阻止错误，只能发现</td></tr>
+        <tr><td>co-creator</td><td>创建提案</td><td>地图/事件/定义修改</td><td>提案积压；冲突靠 baseDocHash</td></tr>
+        <tr><td>proposal 状态</td><td>draft / submitted / approved / rejected</td><td>提交、审核、回滚</td><td>没有自动合并；需要人工判断</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <pre><code>// 乐观并发（概念）
+proposal = { baseDocHash, patch, author }
+if currentDocHash != proposal.baseDocHash:
+    reject("文档已更新，请重新生成提案")
+else:
+    apply(patch); audit(proposal)</code></pre>
+
+  <p class="caption">表 2 · Matrees 的角色/提案模型。历法是例外：<code>/mt/calendar/*</code> 直接写，不经过 proposal；删除/修改历法若不做事件引用检查，会造成“旧事件还能显示、新编辑/筛选不一致”的治理缝隙。</p>
+
+  <h3>3.4.2 地图文档的不变量</h3>
+
+  <ul>
+    <li>地图坐标必须有限且在 0–2048；屏幕坐标只存在于相机层，不写入文档。</li>
+    <li>region 至少 3 点；river 至少 2 点；route 的 smooth/width/closed 是样式，不是几何。</li>
+    <li>city 必须落在陆地；stamp 最多 400 个，按距离去重；区域邻接由 256 网格扫描，不靠人工维护。</li>
+    <li>地图文档的根是 manifestHash；任何 chunk/vector/digest 变化都产生新根，旧版本可回滚。</li>
+  </ul>
+
+  <h3>3.5 时间线：年归一化 + 月日分数 + 行 packing</h3>
+
+  <p>Matrees 的时间线不是时间戳轴，而是“显示历法的年 + 月/日分数”。核心布局公式：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 1 · timeline x</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>=</mo><mo>(</mo><mi>y</mi><mo>−</mo><msub><mi>y</mi><mi>min</mi></msub><mo>)</mo><mo>⋅</mo><mfrac><mi>W</mi><mrow><msub><mi>y</mi><mi>max</mi></msub><mo>−</mo><msub><mi>y</mi><mi>min</mi></msub><mo>+</mo><mn>1</mn></mrow></mfrac><mo>+</mo><mfrac><mrow><mi>m</mi><mo>−</mo><mn>1</mn></mrow><mn>12</mn></mfrac><mo>⋅</mo><mfrac><mi>W</mi><mrow><mi>span</mi></mrow></mfrac><mo>+</mo><mfrac><mrow><mi>d</mi><mo>−</mo><mn>1</mn></mrow><mrow><msub><mi>D</mi><mi>m</mi></msub></mrow></mfrac><mo>⋅</mo><mfrac><mn>1</mn><mn>12</mn></mfrac><mo>⋅</mo><mfrac><mi>W</mi><mrow><mi>span</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">x=(y-y_{min})\frac{W}{y_{max}-y_{min}+1}+\frac{m-1}{12}\frac{W}{span}+\frac{d-1}{D_m}\frac{1}{12}\frac{W}{span}</annotation></semantics></math>
+    <div class="eq-note">每年等宽，不按实际天数；span = y<sub>max</sub>−y<sub>min</sub>+1，D<sub>m</sub> 为当月天数；月/日只在年内部做分数偏移。区间宽度 = |endX − startX|，最小 30px；行 packing 时抬到 120px，两侧各 20px 防碰撞。</div>
+  </div>
+
+  <p class="caption">表 2A · Eq.1 变量。x 为像素坐标；y 为显示历法年；m/d 为月/日；W 为画布宽；span=y<sub>max</sub>−y<sub>min</sub>+1；D<sub>m</sub> 为当月天数。</p>
+
+  <ol>
+    <li><b>定范围：</b>取当前显示历法的最小/最大事件年，span=ymax−ymin+1；空世界用默认窗口，避免除零。</li>
+    <li><b>年像素：</b>pxPerYear=W/span；每年等宽，不按实际天数。</li>
+    <li><b>年偏移：</b>x = (y−ymin)·pxPerYear；负数年先归一化到 ymin，不直接 clamp 到 0。</li>
+    <li><b>月日分数：</b>x += (m−1)/12·pxPerYear + (d−1)/Dm·(1/12)·pxPerYear；不要用“月序号×30”。</li>
+    <li><b>区间宽度：</b>width=|xEnd−xStart|；最小 30px，否则点事件不可点。</li>
+    <li><b>行 packing：</b>按开始年排序；每行放不下就换行；最多 5 行；两侧 20px 防碰撞。</li>
+    <li><b>自动缩放/懒加载：</b>最多 8 次 +0.3；初始 100 条，选中前后 25 条，1s 节流。</li>
+  </ol>
+
+  <p><b>异常：</b>span=0→用 1；Dm 缺失→回退 30；超长区间→裁剪到当前窗口并标记；负年份/BCE→显示层保留符号，布局层用归一化整数年。</p>
+
+  <p>行 packing 最多 5 行，先按“开始年 → 区间优先/更长优先”排序；每行放不下就换行；超过 5 行标记 overlap。自动缩放最多尝试 8 次、每次 +0.3，直到最大行 &lt;5 且无 overlap；懒加载初始 100 条，围绕选中事件前后 25 条，接近边缘再 extend，1 秒节流。时间线是“按需窗口”，不是全量渲染。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>参数</th><th>值</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td>MAX_LANES</td><td>5</td><td>超过即 overlap，不无限堆行</td></tr>
+        <tr><td>laneHeight / gap</td><td>60/70px；15/18px</td><td>事件条高度与行间距；区间事件用更高行</td></tr>
+        <tr><td>minWidth</td><td>30px</td><td>点事件也有可点击宽度</td></tr>
+        <tr><td>collisionPadding</td><td>20px</td><td>行内左右留白，防止标记贴边</td></tr>
+        <tr><td>initial / context</td><td>100 / ±25</td><td>首屏与选中事件附近懒加载</td></tr>
+        <tr><td>auto zoom</td><td>≤8 次，+0.3</td><td>直到最大行 ≤5 且无 overlap</td></tr>
+        <tr><td>throttle</td><td>1s</td><td>scroll/resize 扩展节流</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="caption">表 3 · 时间线布局常量。它不是通用甘特图，而是“叙事事件 + 纪元带”的专用布局：点/区间、行 packing、懒加载、自动缩放共同控制复杂度。</p>
+
+  <h3>3.6 历法：比例换算 + 显示片段</h3>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 2 · calendar conversion</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>base</mi><mo>=</mo><mi>round</mi><mo>(</mo><mfrac><msub><mi>y</mi><mi>cal</mi></msub><mi>ratio</mi></mfrac><mo>+</mo><msub><mi>baseYear</mi></msub><mo>)</mo><mo>,</mo><mspace width="0.5em"/><msub><mi>y</mi><mi>cal</mi></msub><mo>=</mo><mi>round</mi><mo>(</mo><mo>(</mo><mi>base</mi><mo>−</mo><msub><mi>baseYear</mi></msub><mo>)</mo><mo>⋅</mo><mi>ratio</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">\mathrm{base}=\mathrm{round}\left(\frac{y_{cal}}{ratio}+baseYear\right),\quad y_{cal}=\mathrm{round}((base-baseYear)\cdot ratio)</annotation></semantics></math>
+    <div class="eq-note">type 1 纪元：有限区间、不可重叠、仅第一个可无开始、仅最后一个可无结束；type 2 纪年：可无结束、可并存。事件保存 defaultCalendar、bundleCalendar、displayTime[]、yearToZero，前端切换历法只是选片段。</div>
+  </div>
+
+  <p class="caption">表 2B · Eq.2 变量。base 是服务器绝对年；y<sub>cal</sub> 是历法年；ratio 是历法年/基准年比例；baseYear 是历法原点。</p>
+
+  <ol>
+    <li><b>建历法：</b>填 type（1 纪元/2 纪年）、baseYear、endYear、ratio、月名/月天数。</li>
+    <li><b>校验：</b>ratio≠0；type 1 的区间不可重叠；只有第一个可无开始、最后一个可无结束。</li>
+    <li><b>写事件：</b>前端只提交历法年/月/日；服务端算 base=round(ycal/ratio+baseYear)。</li>
+    <li><b>回填：</b>为每个相关历法生成 displayTime[] 与 yearToZero；不要在前端重复换算。</li>
+    <li><b>切换：</b>时间线按当前历法选片段；跨历法比较用 base，不用显示年。</li>
+    <li><b>删除/修改：</b>先查事件引用；有引用则迁移或拒绝；不能只删历法。</li>
+    <li><b>验证：</b>同一事件在所有历法下指向同一 base；round-trip 误差 ≤1 年。</li>
+  </ol>
+
+  <p><b>异常：</b>ratio 为负/0→拒绝；baseYear 缺失→拒绝；type 1 重叠→拒绝；事件无 displayTime→用 default 历法回填；删除历法有引用→返回冲突而不是静默删除。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>历法</th><th>type</th><th>baseYear</th><th>endYear</th><th>ratio</th><th>事件→绝对年</th></tr></thead>
+      <tbody>
+        <tr><td>亚特兰蒂斯</td><td>2 纪年</td><td>−16,000</td><td>2027</td><td>1</td><td>6000 → −10,000；大洪水 10000 → −6,000</td></tr>
+        <tr><td>银月历</td><td>2 纪年</td><td>−30,000</td><td>1444</td><td>1</td><td>可无结束；与公元并存</td></tr>
+        <tr><td>公元</td><td>1 纪元</td><td>0</td><td>2525</td><td>1</td><td>系统基准；事件 274 → 274</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="caption">表 4 · Matrees 真实历法样本。历法是直接写、事件是提案；删除/修改历法前若不做引用检查，旧事件虽可显示，但新编辑/筛选会不一致。这是本文识别出的治理风险。</p>
+
+  <pre><code>// 事件日期的显示片段（概念）
+displayTime[] = [
+  { calendarId: "atlantis", year: 10000, month: 1, day: 1,
+    yearToZero: -6000, label: "大洪水" },
+  { calendarId: "ce", year: -4000, month: 1, day: 1,
+    yearToZero: -4000, label: "公元前4000年" }
+]</code></pre>
+
+  <p>这也是 Matrees 历法“隐蔽但强”的地方：前端只提交历法年/月/日；服务端回填绝对年与显示片段。切换历法不是重算事件，而是选择片段；但历法直接写意味着删除/改 ratio 必须有引用检查，否则旧事件显示与新筛选会分裂。</p>
+
+  <h3>3.7 证据、性能与边界</h3>
+
+  <p>Matrees 的 13 个 JS chunk 共 354,115 字节、115,661 AST 节点、1,104 findings；REA 保留 4,679 call-flow、8,533 closure、75,661 data-flow、317 promise、40 timer，并发现 synth/distance 两个 Worker 与 IndexedDB。静态分析仍有 24,341 个 unknown、覆盖 partial；因此本文把“代码常量/函数”和“运行时观察”分开。</p>
+
+  <p>工程代价也很明显：首页 192 个脚本、约 4MB JS、1.57MB CSS；提案制对单人作者摩擦高；公开页 UA 分流；图标化交互与可访问性不足。这些不是“实现 bug”，而是“纵向治理系统”的结构性成本。</p>
+
+  <h2 id="ch4" class="anchor">第 4 章 · VVD 与 Matrees：两种实现哲学</h2>
+
+  <h3>4.1 横向文档 vs 纵向本体</h3>
+
+  <p>VVD 的官方定义是“World = 项目文件夹，Cards = 原子，Maps/Canvases/Relation Trees/Timelines 都是 documents，可以像 block 一样嵌入 Card 正文”。Matrees 反过来：先有 World，再有 Concept/Definition/Event/Calendar/Map/Work，每个对象有类型、权限、提案、审核、历史版本。VVD 是“先写再组织”，Matrees 是“先定义再写入”。</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 960 340" role="img" aria-label="VVD 横向文档与 Matrees 纵向本体的对比">
+      <g font-family="system-ui, sans-serif" font-size="11.5" fill="#171711">
+        <rect x="20" y="25" width="440" height="285" rx="6" fill="#fff" stroke="#b9bcae"/>
+        <text x="38" y="52" font-weight="700" fill="#7a3f1d">VVD：文档 + 工具（横向）</text>
+        <rect x="38" y="70" width="180" height="48" rx="4" fill="#f3e7dc" stroke="#7a3f1d"/>
+        <text x="52" y="90" font-weight="600">World</text>
+        <text x="52" y="107" fill="#5f6156">项目文件夹</text>
+        <rect x="238" y="70" width="200" height="48" rx="4" fill="#fff" stroke="#b9bcae"/>
+        <text x="252" y="90" font-weight="600">Card</text>
+        <text x="252" y="107" fill="#5f6156">name / alias / image</text>
+        <rect x="38" y="140" width="180" height="48" rx="4" fill="#fff" stroke="#b9bcae"/>
+        <text x="52" y="160" font-weight="600">Map doc</text>
+        <text x="52" y="177" fill="#5f6156">image + zones/pins</text>
+        <rect x="238" y="140" width="200" height="48" rx="4" fill="#fff" stroke="#b9bcae"/>
+        <text x="252" y="160" font-weight="600">Timeline doc</text>
+        <text x="252" y="177" fill="#5f6156">calendar + ages/events</text>
+        <rect x="38" y="210" width="400" height="48" rx="4" fill="#fff" stroke="#b9bcae"/>
+        <text x="52" y="230" font-weight="600">Card blocks</text>
+        <text x="52" y="247" fill="#5f6156">text / media / map / timeline / relation</text>
+        <rect x="38" y="270" width="400" height="24" rx="3" fill="#fbf3df" stroke="#8a5a00"/>
+        <text x="52" y="287" fill="#5f6156">发布：Wiki / Quill / PDF / 自定义域名</text>
+
+        <rect x="500" y="25" width="440" height="285" rx="6" fill="#fff" stroke="#b9bcae"/>
+        <text x="518" y="52" font-weight="700" fill="#2f6b5e">Matrees：世界本体 + 治理（纵向）</text>
+        <rect x="518" y="70" width="180" height="48" rx="4" fill="#e8f0ed" stroke="#2f6b5e"/>
+        <text x="532" y="90" font-weight="600">World</text>
+        <text x="532" y="107" fill="#5f6156">对象容器</text>
+        <rect x="718" y="70" width="200" height="48" rx="4" fill="#fff" stroke="#b9bcae"/>
+        <text x="732" y="90" font-weight="600">Concept / Definition</text>
+        <text x="732" y="107" fill="#5f6156">类型 / 别名 / 属性</text>
+        <rect x="518" y="140" width="180" height="48" rx="4" fill="#fff" stroke="#b9bcae"/>
+        <text x="532" y="160" font-weight="600">Event / Calendar</text>
+        <text x="532" y="177" fill="#5f6156">多历法 / 显示片段</text>
+        <rect x="718" y="140" width="200" height="48" rx="4" fill="#fff" stroke="#b9bcae"/>
+        <text x="732" y="160" font-weight="600">Map / Work</text>
+        <text x="732" y="177" fill="#5f6156">提案 / 审核 / 版本</text>
+        <rect x="518" y="210" width="400" height="48" rx="4" fill="#fff" stroke="#b9bcae"/>
+        <text x="532" y="230" font-weight="600">Proposal / Audit / Permissions</text>
+        <text x="532" y="247" fill="#5f6156">所有写入的唯一入口；owner / admin / auditor</text>
+        <rect x="518" y="270" width="400" height="24" rx="3" fill="#fbf3df" stroke="#8a5a00"/>
+        <text x="532" y="287" fill="#5f6156">发布：SSR / JSON-LD / sitemap / MCP</text>
+      </g>
+    </svg>
+    <div class="caption">图 3 · VVD 的横向组合与 Matrees 的纵向建模。前者降低启动成本，后者提高一致性与治理能力。</div>
+  </div>
+
+  <h3>4.2 地图：注释层 vs 地形引擎</h3>
+
+  <p>VVD Classic 地图是<strong>图像 + SVG 注释层</strong>：背景图、zones（顶点多边形）、pins、textOverlays、layers、viewport；坐标就是图像像素；pins 在屏幕空间用 union-find 聚合（两 pin 屏幕距离 &lt; 半径和的一半 × 0.85 即合并），最多展示 4 个成员 + “+N”；zones/pins 可链接 Card。它的一分钟路径是“上传图 → 画 zone → 放 pin → 发布”，但地图本身没有海拔、气候、河流、边界演化。</p>
+
+  <p>Matrees 的 vector 地图是<strong>2048² heightmap + 六类 feature + 内容寻址文档</strong>：地形、河流、区域、道路、标记之间有推导关系；代价是启动成本高。VVD 的 Map Maker beta 正在补“画地形/河流/道路 + 2D/3D 旅行时间”，但只有官方 Changelog 证据，未拿到编辑器源码，不能与 Classic 的代码证据等同。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>维度</th><th>VVD Classic</th><th>VVD Map Maker beta</th><th>Matrees vector</th></tr></thead>
+      <tbody>
+        <tr><td>地图来源</td><td>上传/公开图片</td><td>画地形/河流/道路；图片转 3D</td><td>空白/参数生成 heightmap</td></tr>
+        <tr><td>世界坐标</td><td>图像像素</td><td>未验证</td><td>0–2048，左下原点</td></tr>
+        <tr><td>区域</td><td>手绘顶点多边形</td><td>未验证</td><td>polygon + tier + parent + 邻接</td></tr>
+        <tr><td>地形算法</td><td>无</td><td>画/ sculpt + 旅行时间</td><td>生成、侵蚀、河流、群系</td></tr>
+        <tr><td>存储</td><td>map document</td><td>beta，未验证</td><td>内容寻址 chunks + digest</td></tr>
+        <tr><td>写入</td><td>直接编辑（协作文档）</td><td>直接编辑</td><td>proposal + audit</td></tr>
+        <tr><td>适合</td><td>已有美术地图、快速标注</td><td>想从零做可走的地图</td><td>要地形/河流/区域联动的世界</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>4.3 时间与历法：单历法纪元 vs 多历法换算</h3>
+
+  <p>VVD 的时间线是“一条时间线一套日历”：Earth/Generic/自定义；小时/日/月/年可配；线性 Year Zero 或循环 Eras；Ages 是线下方的条，Events 是线上方的点；卡片可拖到事件上；支持主/切换/添加变体。它的布局推断为“日历序数归一化”：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 3 · VVD ordinal (inferred)</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>o</mi><mo>=</mo><msub><mi>Y</mi><mi>before</mi></msub><mo>⋅</mo><msub><mi>D</mi><mi>year</mi></msub><mo>+</mo><msub><mi>D</mi><mi>beforeMonth</mi></msub><mo>+</mo><mo>(</mo><mi>d</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>+</mo><mfrac><mi>h</mi><msub><mi>H</mi><mi>day</mi></msub></mfrac><mo>,</mo><mspace width="0.4em"/><mi>x</mi><mo>=</mo><mfrac><mrow><mi>o</mi><mo>−</mo><msub><mi>o</mi><mi>min</mi></msub></mrow><mrow><msub><mi>o</mi><mi>max</mi></msub><mo>−</mo><msub><mi>o</mi><mi>min</mi></msub></mrow></mfrac><mi>W</mi></mrow><annotation encoding="application/x-tex">o=Y_{before}\cdot D_{year}+D_{beforeMonth}+(d-1)+\frac{h}{H_{day}},\quad x=\frac{o-o_{min}}{o_{max}-o_{min}}W</annotation></semantics></math>
+    <div class="eq-note">这是由日历模型/文档/交互反推的“最小可工作模型”，不是 VVD 源码；公开壳层未包含登录后布局代码。标注为 E4 推断。</div>
+  </div>
+
+  <p class="caption">表 3A · Eq.3 变量（推断）。o 为日历序数；Y<sub>before</sub> 为已过年数；D<sub>year</sub> 为一年天数；D<sub>beforeMonth</sub> 为当月之前天数；h/H<sub>day</sub> 为小时分数。</p>
+
+  <ol>
+    <li><b>定日历：</b>选 Earth/Generic/自定义；配置小时/日/月/年与纪元模式（linear/eras）。</li>
+    <li><b>转序数：</b>先算完整年，再加当月之前天数，再加日/小时；所有单位统一到“日”或“小时”。</li>
+    <li><b>定窗口：</b>取可见 Ages/Events 的最小/最大序数；空窗口用默认范围。</li>
+    <li><b>映射 x：</b>x=(o−o<sub>min</sub>)/(o<sub>max</sub>−o<sub>min</sub>)·W；不要用年份直接插值。</li>
+    <li><b>行/lane：</b>事件按序数排序；重叠时抬 lane；Ages 画条，Events 画点。</li>
+    <li><b>交互：</b>拖拽/缩放后重算序数窗口；不要把屏幕像素写进事件。</li>
+    <li><b>验证：</b>同一日期在缩放/切换后落点一致；月长变化不导致跳变。</li>
+  </ol>
+
+  <p>Matrees 的时间线是“一个世界多套日历，一个事件可在多套日历下显示”：事件保存 displayTime[] 与 yearToZero；布局用显示历法的 year/month/day，跨历法比较用绝对年。VVD 的模型更直观，Matrees 的模型更硬核；二者分别服务“单历法多纪元故事”和“多历法并行世界”。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>维度</th><th>VVD Timeline</th><th>Matrees Timeline</th></tr></thead>
+      <tbody>
+        <tr><td>日历数量</td><td>一条时间线一套；新建时选择/可改</td><td>一个世界多套；事件可属于多套</td></tr>
+        <tr><td>时间模型</td><td>线性 Year Zero 或循环 Eras；Era 从 0 开始</td><td>type 1 纪元 / type 2 纪年；ratio + baseYear</td></tr>
+        <tr><td>图元</td><td>Ages（条）+ Events（点）</td><td>点事件 + 区间事件；事件标记 + 跨度</td></tr>
+        <tr><td>布局</td><td>日历序数；lane 拖拽；缩放/平移</td><td>年+月日分数；5 行 packing；自动缩放；懒加载</td></tr>
+        <tr><td>日期粒度</td><td>小时/日/年可配</td><td>年/月/日；无小时</td></tr>
+        <tr><td>写入</td><td>直接编辑（协作文档）</td><td>事件 proposal + audit</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>4.4 架构与协作：实时 CRDT vs 提案治理</h3>
+
+  <p>VVD 是 Next.js App Router + Supabase（Postgres/Auth/Realtime）+ Yjs<sup>[3][4]</sup>：卡片/文档/块是 document_data 的结构化内容，Yjs 负责正文/块合并，awareness 提供光标/在线状态，Supabase Realtime 做消息同步；发布是 Wiki 快照，支持 private/unlisted/public、密码、自定义域名、页面选择。Matrees 是 Vue/Pinia + 自定义 API：地图/事件/定义写入走 proposal gateway，日历直接写；协作是“提案 + 审核”的异步治理，而不是实时 co-editing。</p>
+
+  <p>这两种协作不是“先进/落后”，而是冲突模型不同：VVD 把冲突交给 CRDT，适合“几个人一起写”；Matrees 把冲突交给流程，适合“上千条设定、上万条提案，必须防止设定冲突”。本文的第三路线是<strong>“实时草稿 + 发布审核”</strong>：草稿层用 Yjs/SSE 低摩擦，发布层用 proposal/audit 保证一致性。</p>
+
+  <h3>4.4.1 VVD 的数据模型：文档即容器</h3>
+
+  <pre><code>Workspace
+  └─ World (project folder)
+       ├─ Card { name, alias, image, document_data }
+       │    └─ blocks: text | media | map | timeline | relation | ...
+       ├─ MapDocument { image, zones[], pins[], layers[], viewport }
+       ├─ TimelineDocument { calendar, ages[], events[], viewport }
+       ├─ RelationTree / Canvas (documents)
+       └─ Publication { visibility, password, domain, pages }</code></pre>
+
+  <p>VVD 的关键是“文档可以像 block 一样被嵌入 Card 正文”，所以地图/时间线不是独立模块，而是可被引用的内容。代价是：地图/时间线字段与卡片正文的边界较松，复杂世界需要作者自己维护一致性；Matrees 则用 Concept/Definition/Event 强制建模。</p>
+
+  <h3>4.4.2 协作与发布：把“编辑”和“发布”分开</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>层</th><th>VVD</th><th>Matrees</th><th>本文建议</th></tr></thead>
+      <tbody>
+        <tr><td>草稿</td><td>Yjs/Realtime 实时合并；awareness 在线/光标</td><td>直接编辑 + proposal</td><td>实时草稿（低摩擦）</td></tr>
+        <tr><td>发布</td><td>Wiki 快照；private/unlisted/public；密码/域名</td><td>proposal → audit → 列表/公开页</td><td>发布审核 + 版本</td></tr>
+        <tr><td>冲突</td><td>CRDT 自动合并；适合正文/块</td><td>baseDocHash 乐观并发；适合结构化对象</td><td>正文 CRDT，对象 proposal</td></tr>
+        <tr><td>审计</td><td>偏产品/发布，弱对象审计</td><td>强 proposal/audit/role</td><td>审计只对“发布/敏感对象”强制</td></tr>
+        <tr><td>成本</td><td>Yjs/Realtime 基础设施；大文档内存</td><td>提案积压/审核人力</td><td>单人直编，多人再开治理</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>VVD 的发布模型值得学习：Wiki/Quill/PDF/自定义域名，private/unlisted/public，密码保护，页面选择。这些是“世界可被读者消费”的产品层，而不是模拟层。Matrees 的公开页/JSON-LD/MCP 更偏机器可读与 SEO；两种发布路径可以合并为“人类页面 + 机器接口”。</p>
+
+  <h3>4.4.3 VVD 的代价与边界</h3>
+
+  <ul>
+    <li><strong>性能：</strong>9 个编辑器 chunk 约 2.28MB，625,834 AST 节点；3 个大文件超过解析上限，覆盖 partial。它不是“轻量静态站”，而是重编辑器。</li>
+    <li><strong>地图浅：</strong>Classic 地图没有海拔/气候/河流算法；Map Maker beta 的 3D/旅行时间只有官方 Changelog 证据，未拿到源码。</li>
+    <li><strong>可访问性/交互：</strong>公开页存在小字号、嵌套滚动、移动端拥挤等问题；这些是产品层债，不是模型问题。</li>
+    <li><strong>治理弱：</strong>实时协作适合小团队；上千条设定/多作者冲突时，缺少 Matrees 式提案/审计。</li>
+  </ul>
+
+  <h3>4.5 学什么 / 不学什么</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>做法</th><th>来自</th><th>判断</th><th>本文怎么用</th></tr></thead>
+      <tbody>
+        <tr><td>卡片 + 块 + 文档嵌套</td><td>VVD</td><td>学</td><td>WorldGraph 的 Card/Block；地图/时间线可嵌入</td></tr>
+        <tr><td>Yjs 实时草稿 + awareness</td><td>VVD</td><td>学，但限定草稿层</td><td>草稿 co-editing；发布走审核</td></tr>
+        <tr><td>Wiki/密码/域名/PDF 发布</td><td>VVD</td><td>学</td><td>Publication 层；公开页 + 机器接口</td></tr>
+        <tr><td>一条时间线一套历法</td><td>VVD</td><td>不照搬</td><td>多历法 + 显示片段（Matrees 式）</td></tr>
+        <tr><td>图像 + SVG 注释地图</td><td>VVD</td><td>作为低端入口</td><td>image/PSD 底图 + 可选 Terrain 地形</td></tr>
+        <tr><td>全量实时协作替代治理</td><td>VVD</td><td>不学</td><td>草稿实时，发布审核</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="ch5" class="anchor">第 5 章 · Terrain：从板块演化到地图产品</h2>
+
+  <h3>5.1 先更正一个错误：v12 不是“没有渲染”</h3>
+
+  <p>早期基于同账号 <code>virtual_world</code> 的分析曾判断“render 为空”。当前可访问的 <code>Fantasy_World_Simulator</code> v12<sup>[5]</sup> 已经有 2048²/4096² 渲染、9 群系、河湖、雪线、山影、3D 导出与 512 项测试。那个判断作废。真正的问题不是“没有渲染”，而是“全球栅格 + 自动出片”与“局部地图产品 + 作者策展”之间的最后一公里。</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 960 420" role="img" aria-label="Terrain v12 主流水线">
+      <defs><marker id="f4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <g font-family="system-ui, sans-serif" font-size="11.5" fill="#171711">
+        <rect x="20" y="25" width="170" height="52" rx="5" fill="#e8f0ed" stroke="#2f6b5e"/>
+        <text x="34" y="46" font-weight="600">PlanetParams + seed</text>
+        <text x="34" y="63" fill="#5f6156">半径/海洋/自转</text>
+        <rect x="210" y="25" width="180" height="52" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="224" y="46" font-weight="600">450 Myr 板块</text>
+        <text x="224" y="63" fill="#5f6156">720 步 × 512² × 12 板块</text>
+        <rect x="410" y="25" width="170" height="52" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="424" y="46" font-weight="600">4 构造场</text>
+        <text x="424" y="63" fill="#5f6156">俯冲/离散/转换/余裕</text>
+        <rect x="600" y="25" width="170" height="52" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="614" y="46" font-weight="600">骨架地形</text>
+        <text x="614" y="63" fill="#5f6156">洋深/陆架/山带/裂谷</text>
+        <rect x="790" y="25" width="150" height="52" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="804" y="46" font-weight="600">12 通道 GAN</text>
+        <text x="804" y="63" fill="#5f6156">100/400 瓦片</text>
+        <path d="M190 51 H210 M390 51 H410 M580 51 H600 M770 51 H790" stroke="#2f6b5e" stroke-width="1.3" marker-end="url(#f4)"/>
+
+        <rect x="20" y="120" width="170" height="52" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="34" y="141" font-weight="600">CDF/去斑/接缝</text>
+        <text x="34" y="158" fill="#5f6156">地球分布校准</text>
+        <rect x="210" y="120" width="180" height="52" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="224" y="141" font-weight="600">侵蚀 + 河网</text>
+        <text x="224" y="158" fill="#5f6156">D8/粒子/干流雕刻</text>
+        <rect x="410" y="120" width="180" height="52" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="424" y="141" font-weight="600">气候</text>
+        <text x="424" y="158" fill="#5f6156">T/P/Whittaker/雪线</text>
+        <rect x="610" y="120" width="160" height="52" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="624" y="141" font-weight="600">渲染 RGB</text>
+        <text x="624" y="158" fill="#5f6156">群系色 × 山影</text>
+        <rect x="790" y="120" width="150" height="52" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="804" y="141" font-weight="600">3D 导出</text>
+        <text x="804" y="158" fill="#5f6156">OBJ/glTF</text>
+        <path d="M190 146 H210 M390 146 H410 M590 146 H610 M770 146 H790" stroke="#2f6b5e" stroke-width="1.3" marker-end="url(#f4)"/>
+
+        <rect x="20" y="220" width="430" height="62" rx="5" fill="#fbf3df" stroke="#8a5a00" stroke-dasharray="5 4"/>
+        <text x="36" y="243" font-weight="600">缺失：时间切片</text>
+        <text x="36" y="262" fill="#5f6156">450 Myr 只输出终态；时间线/纪元无法绑定</text>
+        <rect x="480" y="220" width="460" height="62" rx="5" fill="#fbf3df" stroke="#8a5a00" stroke-dasharray="5 4"/>
+        <text x="496" y="243" font-weight="600">缺失：语义与产品层</text>
+        <text x="496" y="262" fill="#5f6156">无区域/城市/道路/标签；全局 2048 栅格</text>
+
+        <rect x="20" y="315" width="440" height="62" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="36" y="338" font-weight="600">Pro：真实度上限</text>
+        <text x="36" y="357" fill="#5f6156">4096/8192、3D LOD/PBR、批量、研究级模型</text>
+        <rect x="480" y="315" width="460" height="62" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="496" y="338" font-weight="600">Lite/Web：摊销近似</text>
+        <text x="496" y="357" fill="#5f6156">SeedPack + 程序化/条件残差；设备端/8 秒服务端</text>
+      </g>
+    </svg>
+    <div class="caption">图 4 · Terrain v12 主流水线与三产品线。模拟/渲染/产品解耦，是同时支持 Pro/Lite/Web 的前提。</div>
+  </div>
+
+  <h3>5.2 板块模型：运动学与公式</h3>
+
+  <p>每个板块是刚体，绕欧拉轴 <i>a<sub>k</sub></i> 以角速度 <i>ω<sub>k</sub></i> 旋转；代码用后向映射找源点：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 4 · Euler rotation / backward mapping</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>v</mi><mi>k</mi></msub><mo>(</mo><mi>r</mi><mo>)</mo><mo>=</mo><msub><mi>ω</mi><mi>k</mi></msub><mo>(</mo><msub><mi>a</mi><mi>k</mi></msub><mo>×</mo><mi>r</mi><mo>)</mo><mo>,</mo><mspace width="0.5em"/><mi>q</mi><mo>=</mo><mi>R</mi><mo>(</mo><msub><mi>a</mi><mi>k</mi></msub><mo>,</mo><mo>−</mo><msub><mi>ω</mi><mi>k</mi></msub><mi>Δ</mi><mi>t</mi><mo>)</mo><mi>r</mi></mrow><annotation encoding="application/x-tex">v_k(r)=\omega_k(a_k\times r),\quad q=R(a_k,-\omega_k\Delta t)r</annotation></semantics></math>
+    <div class="eq-note">T=512、K=12、dt=0.625 Myr、720 步 = 450 Myr；阶段切换 150/260/340 Myr；land_target=0.31。</div>
+  </div>
+
+  <p>边界用速度差在法向的投影分类：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 5 · boundary classification</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mi>n</mi></msub><mo>=</mo><mo>−</mo><mi>Δ</mi><mi>v</mi><mo>⋅</mo><mi>n</mi><mo>,</mo><mspace width="0.4em"/><mi>s</mi><mo>=</mo><msqrt><msubsup><mi>c</mi><mi>n</mi><mn>2</mn></msubsup><mo>+</mo><msup><mrow><mo>|</mo><mi>Δ</mi><mi>v</mi><mo>−</mo><msub><mi>c</mi><mi>n</mi></msub><mi>n</mi><mo>|</mo></mrow><mn>2</mn></msup></msqrt><mo>,</mo><mspace width="0.4em"/><msub><mi>c</mi><mi>n</mi></msub><mo>&gt;</mo><mn>0.35</mn><mi>s</mi><mo>⇒</mo><mtext>convergent</mtext></mrow><annotation encoding="application/x-tex">c_n=-\Delta v\cdot n,\quad s=\sqrt{c_n^2+|\Delta v-c_nn|^2},\quad c_n&gt;0.35s\Rightarrow\mathrm{convergent}</annotation></semantics></math>
+  </div>
+
+  <p>终局高程是“历史 orog 的 tanh 压缩 + 分形场 + 前陆/克拉通/裂谷规则”：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 6 · terminal elevation</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mi>t</mi></msub><mo>=</mo><mi>tanh</mi><mo>(</mo><mfrac><mrow><msub><mi>G</mi><mi>σ</mi></msub><mo>(</mo><mi>orog</mi><mo>)</mo></mrow><msub><mi>o</mi><mi>s</mi></msub></mfrac><mo>)</mo><mo>,</mo><mspace width="0.5em"/><mi>z</mi><mo>=</mo><mn>220</mn><mo>+</mo><mn>430</mn><msub><mi>f</mi><mn>1</mn></msub><mo>+</mo><mn>4900</mn><msub><mi>m</mi><mi>t</mi></msub><mo>(</mo><mn>0.72</mn><mo>+</mo><mn>0.56</mn><msub><mi>f</mi><mn>3</mn></msub><mo>)</mo></mrow><annotation encoding="application/x-tex">m_t=\tanh\left(\frac{G_\sigma(\mathrm{orog})}{o_s}\right),\quad z=220+430f_1+4900m_t(0.72+0.56f_3)</annotation></semantics></math>
+  </div>
+
+  <h4>5.2.1 源码级实现：后向映射与边界</h4>
+
+  <pre><code># plate_sim.py（节选）
+q = _rot(axes[k], -omg[k] * dt) @ r_flat
+la = np.arcsin(np.clip(q[2], -1, 1))
+lo = np.arctan2(q[1], q[0])
+ri = np.clip(((0.5 - la / np.pi) * T).astype(np.int64), 0, T - 1)
+ci = ((lo / (2 * np.pi)) % 1.0 * T).astype(np.int64) % T
+src = ri * T + ci
+d = np.nonzero(plate_f[src] == k)[0]
+...
+pr = np.where(crust_f[s] == 1, 1e6,
+              np.maximum(0.01, 500.0 - age_f[s]))
+take = pr &gt; claim[d]   # 陆 &gt; 年轻洋 &gt; 老洋
+new_plate[dd] = k; new_crust[dd] = crust_f[ss]</code></pre>
+
+  <p>后向映射保证每个目的地最多被一个源认领；未认领格子继承上一帧板块号，地壳/年龄留空，成为扩张中心的新生洋壳。边界分类用法向投影 + 切向模长归一化，0.35 是“汇聚/走滑”的阈值，不是摩擦系数。</p>
+
+  <h3>5.2.2 参数、步骤与失败模式</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>符号/代码</th><th>默认</th><th>单位/范围</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td>T</td><td>512</td><td>像素</td><td>模拟网格；不是渲染分辨率</td></tr>
+        <tr><td>K</td><td>12 + 4–6</td><td>板块</td><td>主板块 + 微大陆</td></tr>
+        <tr><td>dt / steps</td><td>0.625 / 720</td><td>Myr</td><td>450 Myr 总时长</td></tr>
+        <tr><td>phases</td><td>150/260/340</td><td>Myr</td><td>聚合/超大陆/裂解切换</td></tr>
+        <tr><td>land_target</td><td>0.31</td><td>比例</td><td>陆地面积目标；用未加权 mean 统计</td></tr>
+        <tr><td>re_v / o_s</td><td>配置</td><td>归一化</td><td>造山强度尺度；影响 tanh 压缩</td></tr>
+        <tr><td>coefficients</td><td>220/430/4900</td><td>m</td><td>陆高基座/分形/造山幅度</td></tr>
+        <tr><td>threshold</td><td>0.35</td><td>无量纲</td><td>汇聚/走滑判据</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ol>
+    <li><b>初始化：</b>按 seed 放 K 个板块中心，生成 crust/age/plate；微大陆用独立小圆。</li>
+    <li><b>构造旋转：</b>每个板块由 axis+omega 生成 R；聚合/裂解阶段用目标中心或共享轴改 omega。</li>
+    <li><b>后向映射：</b>对每个目的地 r 算 q=R(−ωΔt)r；查源格；源格必须属于同一板块。</li>
+    <li><b>认领：</b>陆地优先于年轻洋，年轻洋优先于老洋；未认领格子成为新洋壳（age=0）。</li>
+    <li><b>边界分类：</b>对 4/8 邻接板块对，算法向/切向分量；用 0.35 阈值分汇聚/离散/转换。</li>
+    <li><b>累积：</b>汇聚按洋—洋/洋—陆/陆—陆写海沟/弧/碰撞；离散写脊/裂谷；转换写走滑。</li>
+    <li><b>阶段切换：</b>150/260/340 Myr 改速度场/裂解；切换后重新归一化板块面积。</li>
+    <li><b>终局装配：</b>orog→高斯→tanh→系数；叠加前陆/克拉通/裂谷；最后做海岸/洋深映射。</li>
+  </ol>
+
+  <p><b>失败模式：</b>极区经纬畸变导致面积偏差；多板块争抢→claim 冲突；源格归属错→板块“泄漏”；长期无未认领→扩张中心消失；边界并列→分类抖动；age 为负→clamp；land_target 用未加权 mean→高纬偏差。验证至少检查 NaN、板块数、陆占比、age 分布、边界类型比例、切片连续性。</p>
+
+  <h3>5.3 GAN、气候、水文与渲染</h3>
+
+  <p>GAN 是 12 通道条件生成（块统计/陆占比/河网/冰川/纬度/四类构造场），256² 瓦片、步长 208、重叠 48；2048² 约 100 片，4096² 约 400 片。全局 CDF 把分布拉回地球：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 7 · conditional GAN + CDF</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><msubsup><mi>F</mi><mi>ref</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><mo>(</mo><msub><mi>F</mi><mi>raw</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>)</mo><mo>,</mo><mspace width="0.5em"/><mi>G</mi><mo>(</mo><mi>z</mi><mo>|</mo><mi>c</mi><mo>)</mo><mo>,</mo><mspace width="0.4em"/><mi>c</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mn>12</mn><mo>×</mo><mi>H</mi><mo>×</mo><mi>W</mi></mrow></msup></mrow><annotation encoding="application/x-tex">x'=F_{\mathrm{ref}}^{-1}(F_{\mathrm{raw}}(x)),\quad G(z\mid c),\quad c\in\mathbb{R}^{12\times H\times W}</annotation></semantics></math>
+  </div>
+
+  <pre><code># generate_world.py（节选）
+rows = list(range(0, W, step))
+for by in rows:
+    for bx in rows:
+        ch = ch_raw[:, by:by1, bx:bx1] + rng.normal(...)
+        ch = (ch - mu) / sd
+        inp = np.repeat(np.repeat(ch, block, 1), block, 2)
+        out = gen(torch.from_numpy(inp).to(device))[0, 0].cpu().numpy()
+        canvas[by:by1, bx:bx1] += out * win
+        wgt[by:by1, bx:bx1] += win
+out = canvas / np.maximum(wgt, 1e-8)</code></pre>
+
+  <p>气候是诊断式：温度用纬向拟合 + 海拔 + 大陆度 + 极地冷却；降水用纬向基座 × 风向/地形扫描 × 大陆度 × 海岸异常；Whittaker 9 类；雪线用纬度表 + 干旱抬升。水文用 D8 汇流 + 粒子侵蚀（15 万水滴 × 40 步；侵蚀 0.45、沉积 0.30）；渲染用 9 群系色 × NW 山影、3px 群系边界混合。</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 8 · climate / hydrology (schematic)</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>29</mn><mo>−</mo><mo>(</mo><mn>0.05</mn><mo>|</mo><mi>φ</mi><mo>|</mo><mo>+</mo><mn>0.006</mn><msup><mi>φ</mi><mn>2</mn></msup><mo>)</mo><mo>−</mo><mn>6.5</mn><mfrac><mi>z</mi><mn>1000</mn></mfrac><mo>+</mo><mi>Δ</mi><msub><mi>T</mi><mi>ci</mi></msub><mo>−</mo><msub><mi>ice</mi><mi>cool</mi></msub><mo>,</mo><mspace width="0.4em"/><msub><mi>A</mi><mi>i</mi></msub><mo>=</mo><msub><mi>s</mi><mi>i</mi></msub><mo>+</mo><munder><mo>∑</mo><mrow><mi>j</mi><mo>:</mo><mi>d</mi><mo>(</mo><mi>j</mi><mo>)</mo><mo>=</mo><mi>i</mi></mrow></munder><msub><mi>A</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">T=29-(0.05|\varphi|+0.006\varphi^2)-6.5\frac{z}{1000}+\Delta T_{ci}-\mathrm{ice}_{cool},\quad A_i=s_i+\sum_{j:d(j)=i}A_j</annotation></semantics></math>
+  </div>
+
+  <h3>5.3.1 GAN/气候/水文的步骤与参数</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>参数</th><th>默认</th><th>作用</th><th>风险</th></tr></thead>
+      <tbody>
+        <tr><td>tile / stride / overlap</td><td>256 / 208 / 48</td><td>GAN 瓦片与混合</td><td>接缝/重复；overlap 太小会裂</td></tr>
+        <tr><td>channels</td><td>12</td><td>块统计/陆海/河网/冰川/纬度/构造</td><td>条件缺失→幻觉</td></tr>
+        <tr><td>CDF blend</td><td>0.60</td><td>把分布拉回参考</td><td>Earth 偏置；小岛被压掉</td></tr>
+        <tr><td>elev cap</td><td>8200m</td><td>峰值截断</td><td>极端地形不够</td></tr>
+        <tr><td>despeckle</td><td>150px</td><td>去孤岛/孤湖</td><td>小岛/湖被误删；文档写 32 是旧口径</td></tr>
+        <tr><td>T coefficients</td><td>29 / .05 / .006 / 6.5</td><td>纬向/海拔温度</td><td>docstring 旧公式不一致</td></tr>
+        <tr><td>erosion</td><td>150k droplets / 40 steps</td><td>粒子侵蚀</td><td>无全局泥沙预算</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><b>GAN 步骤：</b>① 生成 12 通道条件；② 按 256/208/48 切窗；③ 条件归一化并上采样到模型输入；④ 逐瓦片推理；⑤ 用 win 权重混合重叠；⑥ 全局 CDF/峰值/深海钳制；⑦ 去斑/接缝/风格化。</p>
+
+  <p><b>气候/水文步骤：</b>① 算纬度/海拔/大陆度；② 温度基座 + 海拔 + 大陆度 + 极地冷却；③ 风带/地形扫描算降水；④ Whittaker 9 类 + 雪线/海冰；⑤ 填洼；⑥ D8 汇流/河网阈值；⑦ 粒子侵蚀 + 干流雕刻 + 湖泊。每一步都要有 NaN/范围/连通性检查。</p>
+
+  <p><b>失败模式：</b>瓦片接缝、GAN 重复纹理、CDF 让所有世界像地球、去斑误删小岛、温度/雪线文档与代码不一致、D8 在平坦区方向偏置、侵蚀无质量守恒。验证至少看：海岸/河流连续性、峰值分布、群系面积、切片差异、与 Pro 的 RMSE/SSIM。</p>
+
+  <h4>5.3.2 3D 导出与 LOD</h4>
+
+  <p>当前 3D 是 DEM → 平面/球体网格 → OBJ/glTF，适合静态展示，不是流式/游戏级资产。2048² 全网格约 840 万三角形，4096² 约 3,300 万；没有 LOD/分块时，手机和浏览器会被单次上传/解析拖垮。正确做法是把同一 DEM 生成四级 LOD，按视距加载。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>LOD</th><th>网格</th><th>三角形（约）</th><th>用途</th><th>数据</th></tr></thead>
+      <tbody>
+        <tr><td>L0</td><td>512²</td><td>0.5M</td><td>手机/低端/全球总览</td><td>低模 + 低分辨率法线</td></tr>
+        <tr><td>L1</td><td>1024²</td><td>2.1M</td><td>桌面/区域</td><td>法线/基础 PBR</td></tr>
+        <tr><td>L2</td><td>2048²</td><td>8.4M</td><td>高精度局部/离线渲染</td><td>法线/纹理/PBR</td></tr>
+        <tr><td>L3</td><td>4096²</td><td>33.5M</td><td>影视/打印/Pro</td><td>分块/3D Tiles</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="caption">表 5 · 3D LOD。高精度不等于“把 4096 全量塞进浏览器”；应按视距加载，标签/法线/纹理独立流式。</p>
+
+  <h3>5.4 局限、审计与优化</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>层</th><th>现状</th><th>主要缺口</th><th>优化</th></tr></thead>
+      <tbody>
+        <tr><td>板块</td><td>三阶段运动学 + 欧拉旋转 + 陆地守恒</td><td>无地幔对流/slab pull、flexure、动态海平面；脚本化</td><td>参数化驱动力 + Airy/flexure + 时间切片</td></tr>
+        <tr><td>地形装配</td><td>分位映射 + 规则盖章</td><td>地球统计校准，非力学解</td><td>Exner 泥沙 + 质量守恒</td></tr>
+        <tr><td>气候</td><td>纬向 + 地形/海岸修正</td><td>无能量/水汽守恒、季节</td><td>EBM + 水汽输送 + 海洋混合层</td></tr>
+        <tr><td>水文</td><td>D8 + 粒子侵蚀</td><td>无全局泥沙预算；D8 方向偏置</td><td>D∞/MFD + Exner + 冰川/喀斯特</td></tr>
+        <tr><td>GAN</td><td>ETOPO1 + CDF + 瓦片</td><td>Earth 偏置、接缝、无物理约束</td><td>slope/flow/normal/tile loss、风格条件</td></tr>
+        <tr><td>时间</td><td>只输出终态</td><td>450 Myr 不可见</td><td>0/150/260/450 Myr 切片</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>5.4.1 三个最小可行升级</h4>
+
+  <p>优化不需要一次上全 GCM。先把“时间、泥沙、挠曲”三个最小闭环补上，就能显著提高可信度；它们也是 Pro 的 Ultra 档与 Lite/Web 的训练目标。</p>
+
+  <div class="equation">
+    <div class="eq-label">Opt. 1 · Exner sediment balance</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mo>∂</mo><mi>η</mi></mrow><mrow><mo>∂</mo><mi>t</mi></mrow></mfrac><mo>=</mo><mi>U</mi><mo>−</mo><mi>∇</mi><mo>⋅</mo><msub><mi>q</mi><mi>s</mi></msub><mo>,</mo><mspace width="0.5em"/><msub><mi>q</mi><mi>s</mi></msub><mo>=</mo><mi>K</mi><msup><mi>Q</mi><mi>m</mi></msup><msup><mi>S</mi><mi>n</mi></msup></mrow><annotation encoding="application/x-tex">\frac{\partial \eta}{\partial t}=U-\nabla\cdot q_s,\quad q_s=KQ^mS^n</annotation></semantics></math>
+    <div class="eq-note">η 地表高程，U 构造抬升，q_s 泥沙通量。当前粒子侵蚀有局部沉积，但没有全局“侵蚀 = 沉积 + 输出”的预算。</div>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Opt. 2 · flexural isostasy</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi><msup><mi>∇</mi><mn>4</mn></msup><mi>w</mi><mo>+</mo><msub><mi>ρ</mi><mi>m</mi></msub><mi>g</mi><mi>w</mi><mo>=</mo><mi>q</mi><mo>,</mo><mspace width="0.5em"/><mi>D</mi><mo>=</mo><mfrac><mrow><mi>E</mi><msubsup><mi>T</mi><mi>e</mi><mn>3</mn></msubsup></mrow><mrow><mn>12</mn><mo>(</mo><mn>1</mn><mo>−</mo><msup><mi>ν</mi><mn>2</mn></msup><mo>)</mo></mrow></mfrac></mrow><annotation encoding="application/x-tex">D\nabla^4w+\rho_mgw=q,\quad D=\frac{ET_e^3}{12(1-\nu^2)}</annotation></semantics></math>
+    <div class="eq-note">w 竖向挠曲，q 载荷，D 抗弯刚度。先做山根/盆地补偿的轻量版，再考虑完整板挠曲。</div>
+  </div>
+
+  <p>第三项是季节化能量平衡：<code>C ∂T/∂t = S(1−α) − (A+BT) + D∇²T</code>。它不需要全 GCM，但能补季风/雨影/雪线的季节振幅；与 Exner 结合后，气候—侵蚀—均衡才有闭环的可能。</p>
+
+  <h3>5.5 Pro / Lite / Web：三种模型族</h3>
+
+  <p>这是本文对 Terrain 的关键重构：<strong>Pro 是物理参考，Lite 是设备端摊销近似，Web 是服务端摊销生成</strong>。三者共享 SeedPack/风格/矢量，但不共享同一组演化方程。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>层</th><th>Pro</th><th>Lite</th><th>Web</th></tr></thead>
+      <tbody>
+        <tr><td>演化</td><td>450 Myr 真模拟</td><td>不模拟；SeedPack + 时间插值</td><td>不模拟；SeedPack + 条件生成</td></tr>
+        <tr><td>基场</td><td>2048/4096</td><td>512/1024 SeedPack</td><td>1024/2048 SeedPack</td></tr>
+        <tr><td>细节</td><td>全量 GAN + 侵蚀/河网</td><td>fBm/SDF/轻侵蚀 + 可选 tiny U-Net</td><td>蒸馏条件生成器 + 局部 2048</td></tr>
+        <tr><td>气候/水文</td><td>全算</td><td>采样 + 局部河宽</td><td>采样 + 局部下切/渲染</td></tr>
+        <tr><td>时间</td><td>真切片</td><td>预计算插值</td><td>预计算/异步</td></tr>
+        <tr><td>3D</td><td>4 级 LOD/PBR</td><td>低 LOD mesh</td><td>3D Tiles 异步</td></tr>
+        <tr><td>硬件/时延</td><td>工作站，分钟–小时</td><td>手机/核显，2–5s</td><td>GPU worker，8–10s</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Lite 的基场 + 残差模型是：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 9 · Lite/Web amortized models</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mi>L</mi></msub><mo>=</mo><msub><mi>B</mi><mi>s</mi></msub><mo>+</mo><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>K</mi></munderover><msub><mi>a</mi><mi>k</mi></msub><msub><mi>N</mi><mi>k</mi></msub><mo>+</mo><msub><mi>R</mi><mi>φ</mi></msub><mo>,</mo><mspace width="0.5em"/><msub><mi>z</mi><mi>W</mi></msub><mo>=</mo><msub><mi>B</mi><mi>s</mi></msub><mo>+</mo><msub><mi>G</mi><mi>φ</mi></msub><mo>(</mo><mi>c</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">z_L=B_s+\sum_{k=1}^{K}a_kN_k+R_\varphi,\quad z_W=B_s+G_\varphi(c)</annotation></semantics></math>
+    <div class="eq-note">B_s 是 SeedPack 基场；N_k 是程序化噪声；R_φ 是可选蒸馏残差；G_φ 是服务端条件生成器。它们都不解 450 Myr。</div>
+  </div>
+
+  <div class="figure">
+    <svg viewBox="0 0 960 260" role="img" aria-label="Pro/Lite/Web 部署拓扑：本地、设备端、2C2G 控制面与 GPU worker">
+      <defs><marker id="f5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <g font-family="system-ui, sans-serif" font-size="11.5" fill="#171711">
+        <rect x="20" y="35" width="260" height="70" rx="5" fill="#f3e7dc" stroke="#7a3f1d"/>
+        <text x="36" y="59" font-weight="700">Pro · 本地</text>
+        <text x="36" y="78" fill="#5f6156">完整 450Myr / 4096 / 3D / 编辑</text>
+        <text x="36" y="96" fill="#5f6156">输出 .terrainpack</text>
+        <rect x="330" y="35" width="260" height="70" rx="5" fill="#e8f0ed" stroke="#2f6b5e"/>
+        <text x="346" y="59" font-weight="700">Lite · 设备</text>
+        <text x="346" y="78" fill="#5f6156">SeedPack + WebGPU/WASM</text>
+        <text x="346" y="96" fill="#5f6156">512–2048 / 低 LOD 3D</text>
+        <rect x="640" y="35" width="300" height="70" rx="5" fill="#fbf3df" stroke="#8a5a00"/>
+        <text x="656" y="59" font-weight="700">Web · 服务端</text>
+        <text x="656" y="78" fill="#5f6156">2C2G API + GPU worker</text>
+        <text x="656" y="96" fill="#5f6156">标准 2048 2D p50≤8s / p95≤10s</text>
+        <path d="M280 70 H330 M590 70 H640" stroke="#7a3f1d" stroke-width="1.3" marker-end="url(#f5)"/>
+
+        <rect x="20" y="145" width="440" height="80" rx="5" fill="#fff" stroke="#ddddd1"/>
+        <text x="36" y="168" font-weight="700">共享</text>
+        <text x="36" y="188" fill="#5f6156">seed / provenance / style / vector / SeedPack / MapPack</text>
+        <text x="36" y="208" fill="#5f6156">Pro 生成 Pack；Lite/Web 消费；三者可对同一 seed 比较</text>
+        <rect x="480" y="145" width="460" height="80" rx="5" fill="#fff" stroke="#ddddd1"/>
+        <text x="496" y="168" font-weight="700">不同</text>
+        <text x="496" y="188" fill="#5f6156">Pro 解物理；Lite 程序化残差；Web 条件生成</text>
+        <text x="496" y="208" fill="#5f6156">误差对 Pro 定义：e = z_A − z_P；必须同 seed/区域/尺寸</text>
+      </g>
+    </svg>
+    <div class="caption">图 5 · 三产品部署拓扑。2C2G 是控制面；GPU worker 是 Web 计算面；Lite 在用户设备上生成；Pro 在本地追求真实度上限。</div>
+  </div>
+
+  <h4>5.5.1 三种模型的时延与误差</h4>
+
+  <p>Lite/Web 不是“同一模型的低分辨率版”，而是不同模型族。它们共享 SeedPack 基场，但细节生成器不同；因此必须用“对 Pro 的近似误差”定义质量，而不是用“分辨率”定义质量。</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 10 · Web latency budget</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>T</mi><mi>web</mi></msub><mo>≈</mo><msub><mi>T</mi><mi>lookup</mi></msub><mo>+</mo><msub><mi>T</mi><mi>base</mi></msub><mo>+</mo><msub><mi>T</mi><mi>tile</mi></msub><mo>+</mo><msub><mi>T</mi><mi>style</mi></msub><mo>+</mo><msub><mi>T</mi><mi>encode</mi></msub><mo>,</mo><mspace width="0.4em"/><mi>p95</mi><mo>≤</mo><mn>10</mn><mi>s</mi></mrow><annotation encoding="application/x-tex">T_{web}\approx T_{lookup}+T_{base}+T_{tile}+T_{style}+T_{encode},\quad p95\le10s</annotation></semantics></math>
+    <div class="eq-note">p50 ≤8s；仅对“已缓存 SeedPack + 标准 2048 局部 2D + 标签”成立。新 seed/4K/3D 走异步。</div>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 11 · approximation error</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>e</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><msub><mi>z</mi><mi>A</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>−</mo><msub><mi>z</mi><mi>P</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>,</mo><mspace width="0.4em"/><msub><mi>E</mi><mi>RMSE</mi></msub><mo>=</mo><msqrt><mrow><mfrac><mn>1</mn><mi>N</mi></mfrac><munder><mo>∑</mo><mi>x</mi></munder><msup><mi>e</mi><mn>2</mn></msup><mo>(</mo><mi>x</mi><mo>)</mo></mrow></msqrt></mrow><annotation encoding="application/x-tex">e(x)=z_A(x)-z_P(x),\quad E_{\mathrm{RMSE}}=\sqrt{\frac{1}{N}\sum_x e^2(x)}</annotation></semantics></math>
+    <div class="eq-note">A=Lite/Web，P=Pro；同 seed/区域/投影/尺寸。另报 SSIM、海岸线偏移、河流连续性、盲评。</div>
+  </div>
+
+  <p><strong>误差分解：</strong>由命题 3，<i>||z<sub>A</sub>−z<sub>P</sub>|| ≤ ||B<sub>s</sub>−z<sub>P</sub>|| + ||R||</i>。因此 Lite/Web 的优化顺序是：先把基场对齐 Pro（seed/骨架/海岸），再提升局部残差；如果基场错了，局部 GAN 只会把错误细节化。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>步骤</th><th>Lite（设备端）</th><th>Web（服务端）</th><th>检查</th></tr></thead>
+      <tbody>
+        <tr><td>1 载入</td><td>下载/缓存 SeedPack（几 MB）</td><td>按 seed 查 COS/内存缓存</td><td>hash/版本/许可</td></tr>
+        <tr><td>2 取区域</td><td>可见区域裁切/重投影</td><td>请求 region + 2048 输出</td><td>边界/投影一致</td></tr>
+        <tr><td>3 基场</td><td>双线性/样条采样 B<sub>s</sub></td><td>同样采样，服务端 GPU</td><td>与 Pro 同 seed 对齐</td></tr>
+        <tr><td>4 细节</td><td>fBm/ridged + 海岸 SDF + 轻侵蚀</td><td>蒸馏条件生成器 + 局部细节</td><td>坡度/法线/海岸连续</td></tr>
+        <tr><td>5 水系</td><td>读预计算河网 + 局部河宽</td><td>预计算河网 + 局部下切</td><td>连通/入海/不逆坡</td></tr>
+        <tr><td>6 风格/标签</td><td>LUT/群系/标签屏幕空间</td><td>LUT/山影/GeoJSON 标签</td><td>碰撞/可读/风格一致</td></tr>
+        <tr><td>7 输出</td><td>canvas/低 LOD 3D；本地缓存</td><td>WebP/AVIF + COS + SSE</td><td>p50/p95/内存</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="caption">表 6B · Lite/Web 的生成步骤。相同的是“基场 + 局部残差”，不同的是算力位置、模型强度与输出规格。</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 900 240" role="img" aria-label="Pro、Lite、Web 与缓存命中的延迟对比">
+      <g font-family="system-ui, sans-serif" font-size="12" fill="#171711">
+        <text x="30" y="28" font-weight="700">量级对比（不是同一硬件 benchmark）</text>
+        <text x="30" y="66" fill="#5f6156">Pro 4096</text>
+        <rect x="150" y="52" width="620" height="18" rx="3" fill="#9e2f2f" opacity=".8"/>
+        <text x="780" y="66" fill="#5f6156">分钟–小时</text>
+        <text x="30" y="110" fill="#5f6156">Web 2048</text>
+        <rect x="150" y="97" width="180" height="18" rx="3" fill="#7a3f1d" opacity=".85"/>
+        <text x="340" y="111" fill="#5f6156">8–10s</text>
+        <text x="30" y="154" fill="#5f6156">Lite 2048</text>
+        <rect x="150" y="142" width="90" height="18" rx="3" fill="#2f6b5e" opacity=".85"/>
+        <text x="250" y="156" fill="#5f6156">2–5s</text>
+        <text x="30" y="198" fill="#5f6156">Cache hit</text>
+        <rect x="150" y="186" width="22" height="18" rx="3" fill="#8a5a00" opacity=".8"/>
+        <text x="182" y="200" fill="#5f6156">&lt;1s</text>
+      </g>
+    </svg>
+    <div class="caption">图 6 · 延迟量级。Pro 追求真实度，Web 追求 8–10s 在线，Lite 追求设备端 2–5s；缓存命中是另一条路径。</div>
+  </div>
+
+  <h4>5.5.2 设备端与 8 秒预算</h4>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>产品</th><th>场景</th><th>目标</th><th>内存/备注</th></tr></thead>
+      <tbody>
+        <tr><td>Lite</td><td>手机 512² 2D + 标签</td><td>≤2s</td><td>≤300MB；首次 SeedPack 另计</td></tr>
+        <tr><td>Lite</td><td>手机 1024²</td><td>≤5s</td><td>≤450MB；可选 tiny U-Net</td></tr>
+        <tr><td>Lite</td><td>核显 2048²</td><td>≤4s</td><td>≤800MB；Pro 质量更高</td></tr>
+        <tr><td>Web</td><td>2048 局部 2D + 标签</td><td>p50 ≤8s / p95 ≤10s</td><td>缓存命中 &lt;1s</td></tr>
+        <tr><td>Web</td><td>全球/4K/3D</td><td>30–180s 异步</td><td>不在 8s 预算内</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>8s 阶段</th><th>预算</th><th>实现</th></tr></thead>
+      <tbody>
+        <tr><td>鉴权/缓存键</td><td>0.2–0.5s</td><td>seed/region/style/time hash；命中直接 URL</td></tr>
+        <tr><td>骨架加载</td><td>0.2–0.6s</td><td>SeedPack 512/1024 base + 气候/河网预热</td></tr>
+        <tr><td>局部细节</td><td>2.5–4s</td><td>裁切/重投影 + 分形/海岸/轻侵蚀 + 蒸馏残差</td></tr>
+        <tr><td>风格/标签</td><td>1–1.5s</td><td>LUT/山影/群系 + GeoJSON 标签碰撞</td></tr>
+        <tr><td>编码/上传</td><td>0.5–1s</td><td>WebP/AVIF；缩略图并行；COS</td></tr>
+        <tr><td>网络/排队</td><td>1–2s</td><td>SSE 进度；GPU worker 调度；重试余量</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="caption">表 6 · 8 秒流水线。合计约 5.4–9.6s；p95 ≤10s 需要预热、缓存、并行编码；冷启动/新 seed 不在承诺内。</p>
+
+  <h2 id="ch6" class="anchor">第 6 章 · 粗糙感诊断：尺度、语义与策展</h2>
+
+  <h3>6.1 全球 2048 vs 画布 2048</h3>
+
+  <p>2048² 覆盖整个行星时，赤道一像素约 <strong>19.6km</strong>；一个 4,000km 宽的大陆只有约 205px。Matrees 的 2048² 是地图画布，范围由地图决定；如果覆盖 4,000km，一像素约 2km，细约 10 倍。你们都说 2048，但一个是全球，一个是画布。这是“粗糙感”的第一来源，也是“局部 2048”必须先做局部重算、而不是放大全球图的原因。</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 900 250" role="img" aria-label="全球 2048 与局部 2048 的有效分辨率对比">
+      <g font-family="system-ui, sans-serif" font-size="12" fill="#171711">
+        <text x="30" y="30" font-weight="700">每像素覆盖的公里数（越小越清晰）</text>
+        <text x="30" y="65" fill="#5f6156">全球 2048</text>
+        <rect x="150" y="52" width="620" height="18" rx="3" fill="#9e2f2f" opacity=".8"/>
+        <text x="780" y="66" fill="#5f6156">≈19.6 km/px</text>
+        <text x="30" y="110" fill="#5f6156">局部 4,000km</text>
+        <rect x="150" y="97" width="63" height="18" rx="3" fill="#2f6b5e" opacity=".85"/>
+        <text x="225" y="111" fill="#5f6156">≈2.0 km/px</text>
+        <text x="30" y="155" fill="#5f6156">局部 8,000km</text>
+        <rect x="150" y="142" width="126" height="18" rx="3" fill="#2f6b5e" opacity=".55"/>
+        <text x="288" y="156" fill="#5f6156">≈3.9 km/px</text>
+        <text x="30" y="205" fill="#5f6156">全球 2048 的 4,000km 大陆 ≈ 205px；局部 2048 ≈ 2048px。</text>
+      </g>
+    </svg>
+    <div class="caption">图 7 · 尺度错位。把全球 2048 裁一块放大到 2048，不会恢复已经丢失的细节。</div>
+  </div>
+
+  <h3>6.2 没有语义层，地图只是地形</h3>
+
+  <p>Matrees 的地图有 region/city/pin/river/route/stamp 六类要素；VVD 有 zones/pins/layers + Card link。Terrain 只有 RGB。人眼判断“这是地图”而不是“地形渲染”，很大程度依赖区域、城市、道路、地名、图例、比例尺。没有这些，即使地形真实，也只是卫星图。</p>
+
+  <h3>6.3 风格、光照与“数据可视化”</h3>
+
+  <p>Terrain 的 9 群系色 + NW 单方向山影 + 3px 群系边界，是“数据可视化”而非“美术指导”。Matrees 的视觉优势来自局部画布 + 图层 + 标签 + 可替换底图（image/PSD/vector）+ 作者策展。比较“自动生成”与“人工策展/PSD”的成品，本身就不公平。</p>
+
+  <h3>6.4 GAN 痕迹与清理</h3>
+
+  <p>256² 瓦片、208 步长、48 重叠、全局 CDF、<code>despeckle(min_area=150)</code>：这些工程让结果稳定，也会抹掉小岛、产生瓦片重复/接缝、把分布拉回地球。它们不是“算法错”，是“自动管线为了稳定牺牲局部个性”。</p>
+
+  <h3>6.5 粗糙感的可测量化</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>指标</th><th>定义</th><th>为什么相关</th></tr></thead>
+      <tbody>
+        <tr><td>有效分辨率</td><td>δ = 区域宽度 / 画布像素</td><td>全球 2048 与局部 2048 的差异首先是 δ</td></tr>
+        <tr><td>海岸线偏移</td><td>同 seed 下 Lite/Web 与 Pro 的海陆边界平均距离</td><td>海岸是最容易被眼睛抓住的错误</td></tr>
+        <tr><td>坡度/高程分布</td><td>hypsometry、坡度直方图、粗糙度</td><td>判断“山是否像山”，不是只看最高点</td></tr>
+        <tr><td>河网连续性</td><td>Strahler/Hack、连通率、入海率</td><td>河流断裂/倒流会立刻破坏可信度</td></tr>
+        <tr><td>标签密度/碰撞</td><td>每千平方公里的标签数、重叠率</td><td>地图可读性不是地形 alone</td></tr>
+        <tr><td>风格保真</td><td>与参考风格的调色/光照/纸纹距离 + 盲评</td><td>“好看”是感知，不是 PSNR</td></tr>
+        <tr><td>一致性</td><td>局部/全球/切片接缝差异</td><td>多尺度产品的核心承诺</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>6.6 公平比较协议</h3>
+
+  <p>比较“自动生成”与 Matrees 成品时，至少要对齐：同一区域范围、同一投影、同一像素尺寸、同一标签/图例策略、同一风格预设；否则“Matrees 更好看”可能只是因为它有标签/手绘/PSD。建议做三组实验：① 无标签纯地形；② 有标签/图例的成品图；③ 同一世界局部 vs 全球。每组做盲评（不知道来源）+ 任务（找河流/找海岸/找城市）+ 客观指标。</p>
+
+  <div class="callout"><p><strong>诊断：</strong>粗糙感 = 尺度错位（全球 2048 vs 局部画布）+ 语义缺失 + 美术/光照经验化 + GAN/清理痕迹 + 无交互/策展。它不是单一算法问题；因此优化也不能只靠“再加一个噪声层”。</p></div>
+
+  <h2 id="ch7" class="anchor">第 7 章 · 综合架构：世界图、瓦片与三产品线</h2>
+
+  <h3>7.1 设计原则</h3>
+
+  <ol>
+    <li><strong>真值/表示/社会分离：</strong>模拟、地图、协作不共享同一组对象生命周期；通过接口耦合。</li>
+    <li><strong>多尺度而非单张全球图：</strong>局部 2048 + 全球瓦片金字塔；标签屏幕空间。</li>
+    <li><strong>语义一等公民：</strong>region/city/route/pin/label 与地形同样重要。</li>
+    <li><strong>时间一等公民：</strong>模拟切片、历法、事件、纪元分层，不把时间压成年份小数。</li>
+    <li><strong>算力分层：</strong>Pro 本地、Lite 设备、Web GPU worker、2C2G 控制面。</li>
+    <li><strong>治理可选：</strong>单人直编；多人世界再开提案/审核，不强制全站流程。</li>
+  </ol>
+
+  <h3>7.2 统一对象模型</h3>
+
+  <pre><code>World
+  ├─ WorldGraph: Card / Definition / Event / Relation / Work
+  ├─ MapDocument
+  │    ├─ SourcePack: seed / terrain / climate / provenance
+  │    ├─ Tiles: z0..zN / 2D / 3D Tiles
+  │    ├─ Features: region / city / pin / river / route / stamp
+  │    └─ StyleProfile: palette / light / labels / borders
+  ├─ TimelineDocument
+  │    ├─ Calendar: type / baseYear / ratio / month/day
+  │    ├─ Eras / Ages / Events
+  │    └─ TimeSlices: 0/150/260/450 Myr (optional)
+  ├─ Asset / Pack / Publication
+  └─ Proposal / Audit / Permission (optional)</code></pre>
+
+  <div class="figure">
+    <svg viewBox="0 0 960 360" role="img" aria-label="世界图数据模型：World、Card、Event、Calendar、Map、Feature、Pack、Proposal">
+      <g font-family="system-ui, sans-serif" font-size="11" fill="#171711">
+        <rect x="20" y="25" width="150" height="55" rx="5" fill="#f3e7dc" stroke="#7a3f1d"/>
+        <text x="34" y="47" font-weight="700">World</text><text x="34" y="64" fill="#5f6156">id / title / visibility</text>
+        <rect x="210" y="25" width="170" height="55" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="224" y="47" font-weight="700">Card / Definition</text><text x="224" y="64" fill="#5f6156">name / type / blocks</text>
+        <rect x="420" y="25" width="150" height="55" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="434" y="47" font-weight="700">Event</text><text x="434" y="64" fill="#5f6156">date / links / card</text>
+        <rect x="610" y="25" width="150" height="55" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="624" y="47" font-weight="700">Calendar</text><text x="624" y="64" fill="#5f6156">type / ratio / base</text>
+        <rect x="800" y="25" width="140" height="55" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="814" y="47" font-weight="700">Proposal</text><text x="814" y="64" fill="#5f6156">baseDocHash / audit</text>
+
+        <rect x="20" y="135" width="160" height="60" rx="5" fill="#e8f0ed" stroke="#2f6b5e"/>
+        <text x="34" y="157" font-weight="700">MapDocument</text><text x="34" y="175" fill="#5f6156">manifest / style / view</text>
+        <rect x="220" y="135" width="170" height="60" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="234" y="157" font-weight="700">Feature</text><text x="234" y="175" fill="#5f6156">region/city/pin/river/route</text>
+        <rect x="430" y="135" width="170" height="60" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="444" y="157" font-weight="700">Tile / LOD</text><text x="444" y="175" fill="#5f6156">2D tiles / 3D Tiles</text>
+        <rect x="640" y="135" width="160" height="60" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="654" y="157" font-weight="700">TimelineDocument</text><text x="654" y="175" fill="#5f6156">eras / events / view</text>
+        <rect x="830" y="135" width="110" height="60" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="844" y="157" font-weight="700">Pack</text><text x="844" y="175" fill="#5f6156">seed / assets</text>
+
+        <rect x="20" y="245" width="920" height="60" rx="5" fill="#fbf3df" stroke="#8a5a00" stroke-dasharray="5 4"/>
+        <text x="36" y="268" font-weight="700">关系：World 1—N Card；Map 1—N Feature；Feature N—N Event/Card；Event N—N Calendar；Pack 1—N Tile；Proposal 1—1 baseDocHash</text>
+        <text x="36" y="289" fill="#5f6156">不变量：feature 坐标在 0–2048；event 至少一个 displayTime；tile key 含 z/x/y；proposal 不得跨 world；删除 Calendar 前检查 Event 引用。</text>
+
+        <g stroke="#7a3f1d" stroke-width="1.1" fill="none">
+          <path d="M170 52 H210"/><path d="M380 52 H420"/><path d="M570 52 H610"/><path d="M760 52 H800"/>
+          <path d="M170 165 H220"/><path d="M390 165 H430"/><path d="M600 165 H640"/><path d="M800 165 H830"/>
+          <path d="M100 80 V135"/><path d="M305 80 V135"/><path d="M495 80 V135"/><path d="M700 80 V135"/>
+        </g>
+      </g>
+    </svg>
+    <div class="caption">图 8 · 世界图数据模型。地图/时间线/卡片/提案共享同一个 World，但各自有独立生命周期。</div>
+  </div>
+
+  <h3>7.3 地图与瓦片</h3>
+
+  <p>局部 2048 是“可读性单位”，全球是“瓦片树”，3D 是“同一树的 LOD 表示”。z0 全球总览；z1–z2 区域；z3+ 局部 2048；标签用浏览器屏幕空间绘制；风格由 StyleProfile 控制；Pro 烘焙，Lite/Web 复用。全球地图不应该是一张 8192×8192 的大图，而是按需加载的瓦片。</p>
+
+  <h3>7.4 时间与历法</h3>
+
+  <p>把时间拆成三层：<strong>模拟时间</strong>（Myr/切片）、<strong>历法时间</strong>（ratio/baseYear/type 1/2）、<strong>叙事时间</strong>（Era/Age/Event）。Matrees 的“显示片段 + 绝对年”适合多历法；VVD 的“Ages/Events + Calendar Settings”适合低摩擦；Terrain 的 450 Myr 切片可以成为“古地理层”。三者可以共存：时间线选历法，地图选切片，事件绑定绝对时间。</p>
+
+  <h3>7.5 协作与发布</h3>
+
+  <p>本文建议“双层协作”：<strong>草稿层</strong>用 Yjs/SSE/实时 presence，低摩擦；<strong>发布层</strong>用 proposal/audit/版本，保证一致性。单人世界默认直编；多人世界再启用提案。发布支持公开页、JSON-LD、OG、静态快照、签名 URL；地图/时间线/卡片是同一世界图的不同视图。</p>
+
+  <h3>7.6 部署矩阵</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>层</th><th>Pro</th><th>Lite</th><th>Web</th><th>2C2G</th></tr></thead>
+      <tbody>
+        <tr><td>生成</td><td>完整 450Myr/4096/3D</td><td>SeedPack + 设备残差</td><td>SeedPack + 条件生成</td><td>不生成</td></tr>
+        <tr><td>算力</td><td>本地工作站</td><td>手机/核显 WebGPU</td><td>GPU worker</td><td>2 vCPU/2GB 控制面</td></tr>
+        <tr><td>延迟</td><td>分钟–小时</td><td>2–5s</td><td>8–10s（缓存 &lt;1s）</td><td>API p95 &lt;200ms</td></tr>
+        <tr><td>输出</td><td>MapPack/3D/印刷</td><td>2D/低 LOD 3D</td><td>2D/3D 异步</td><td>manifest/瓦片 URL/Feature CRUD</td></tr>
+        <tr><td>关键约束</td><td>真实度上限</td><td>设备内存/带宽</td><td>GPU 成本/队列</td><td>不跑 torch/DB 全家桶</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.6.1 2C2G 预算</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>组件</th><th>建议</th><th>RSS 预算</th><th>备注</th></tr></thead>
+      <tbody>
+        <tr><td>OS</td><td>精简 Linux</td><td>200–350MB</td><td>留 page cache</td></tr>
+        <tr><td>Nginx</td><td>静态/反代/签名 URL</td><td>30–60MB</td><td>瓦片直出，不经 Django</td></tr>
+        <tr><td>Gunicorn + Django</td><td>2 workers（含应用）</td><td>300–500MB</td><td>不要 4+ workers</td></tr>
+        <tr><td>DB</td><td>SQLite 或外部 Postgres</td><td>50–200MB</td><td>不要把 Postgres+Redis+Celery 全塞进来</td></tr>
+        <tr><td>Realtime</td><td>SSE/外部服务</td><td>0–50MB</td><td>不跑 Yjs server</td></tr>
+        <tr><td>生成</td><td>不在此机器</td><td>0</td><td>Pro/CI/GPU worker</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="caption">表 7 · 2C2G 预算。合计约 600–1,200MB；2GB 可行但必须把 DB/实时/生成外置，并给 page cache 留余量；SQLite+本地媒体+多 worker 同时上会 OOM。</p>
+
+  <h3>7.7 关键架构决策</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>决策</th><th>选择</th><th>放弃</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>地图单位</td><td>局部 2048 + 全球瓦片</td><td>单张 8192 全球图</td><td>可读性/内存/局部细节</td></tr>
+        <tr><td>时间</td><td>模拟切片 + 多历法/事件</td><td>只用年份小数</td><td>多历法/纪元/古地理</td></tr>
+        <tr><td>协作</td><td>草稿 CRDT + 发布审核</td><td>纯实时或纯提案</td><td>低摩擦与一致性兼得</td></tr>
+        <tr><td>生成</td><td>Pro/Lite/Web 三模型族</td><td>一套模型硬适配所有硬件</td><td>成本/时延/真实度分层</td></tr>
+        <tr><td>部署</td><td>2C2G 控制面 + GPU worker</td><td>2C2G 跑生成/DB 全家桶</td><td>内存/延迟/可靠性</td></tr>
+        <tr><td>语义</td><td>Feature 一等公民</td><td>只渲染 RGB</td><td>地图可读/可查/可编辑</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.8 备选方案与取舍</h3>
+
+  <p><strong>方案 A：全本地单机。</strong>真实度/隐私最好，但协作/发布弱，Pro 是它的极端形态。<strong>方案 B：纯 SaaS。</strong>上手快/协作强，但 2C2G/GPU 成本与数据主权是问题，VVD 是它的近似。<strong>方案 C：纯预计算 Pack。</strong>最便宜/最快，但无法在线生成新 seed，Lite 的 SeedPack 是它的轻量版。<strong>方案 D：本文的混合分层。</strong>Pro 本地、Lite 设备、Web worker、2C2G 控制面；复杂度最高，但能覆盖三种用户。</p>
+
+  <p>选择 D 的前提是“共享格式”先行：没有 SeedPack/MapPack，三条产品线会各自长成孤岛；有了格式，Pro 的产物可以被 Lite/Web 消费，Web 的缓存可以复用 Pro 的骨架，Lite 的 SeedPack 可以离线分发。格式是架构的宪法。</p>
+
+  <h2 id="ch8" class="anchor">第 8 章 · 评估、路线图与风险</h2>
+
+  <h3>8.1 需求覆盖矩阵</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>需求</th><th>Matrees</th><th>VVD</th><th>Terrain v12</th><th>本文目标</th></tr></thead>
+      <tbody>
+        <tr><td>局部地图</td><td>●</td><td>◐（图片）</td><td>○（全球）</td><td>● 局部 2048/4096</td></tr>
+        <tr><td>全球地图</td><td>◐</td><td>◐</td><td>●（栅格）</td><td>● 瓦片金字塔</td></tr>
+        <tr><td>2D/3D</td><td>◐/◐</td><td>●/◐</td><td>◐/●</td><td>●/●</td></tr>
+        <tr><td>语义层</td><td>●</td><td>●</td><td>○</td><td>●</td></tr>
+        <tr><td>时间/演化</td><td>◐（历法）</td><td>◐（时间线）</td><td>○（终态）</td><td>●（切片+历法）</td></tr>
+        <tr><td>交互</td><td>●</td><td>●</td><td>○</td><td>●</td></tr>
+        <tr><td>协作/治理</td><td>●</td><td>●（实时）</td><td>○</td><td>◐→●（草稿+审核）</td></tr>
+        <tr><td>低部署成本</td><td>◐</td><td>●（SaaS）</td><td>○</td><td>●（Pro/Lite/Web）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>8.1.1 研究问题的回答</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>RQ</th><th>回答</th><th>证据</th><th>置信度</th></tr></thead>
+      <tbody>
+        <tr><td>RQ1 架构</td><td>Matrees=纵向本体+提案；VVD=横向文档+CRDT；差异在“对象是否强制类型化”</td><td>E1/E2/E3</td><td>高（代码+观察）</td></tr>
+        <tr><td>RQ2 粗糙感</td><td>不是单一算法；是尺度错位、语义缺失、美术/光照经验化、GAN/清理痕迹、无策展</td><td>E5 + 对照</td><td>中—高（源码/设计）</td></tr>
+        <tr><td>RQ3 一致性</td><td>共享 SeedPack + 瓦片金字塔 + 时间切片 + 语义层；Pro 为参考，Lite/Web 为摊销近似</td><td>设计 artifact</td><td>中（待实现验证）</td></tr>
+        <tr><td>RQ4 约束</td><td>2C2G 控制面 + GPU worker + 设备端 Lite；Web 8s 只限缓存骨架+2048 2D</td><td>预算模型/架构</td><td>中（待压测）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>8.2 路线图</h3>
+
+  <div class="figure">
+    <svg viewBox="0 0 900 280" role="img" aria-label="路线图：共享格式、地图产品、语义时间、Pro、Lite、Web、治理">
+      <g font-family="system-ui, sans-serif" font-size="11.5" fill="#171711">
+        <line x1="40" y1="235" x2="860" y2="235" stroke="#b9bcae"/>
+        <g fill="#f3e7dc" stroke="#7a3f1d">
+          <rect x="55" y="60" width="90" height="24" rx="3"/><rect x="155" y="90" width="120" height="24" rx="3"/><rect x="285" y="120" width="110" height="24" rx="3"/><rect x="405" y="60" width="100" height="24" rx="3"/><rect x="515" y="90" width="100" height="24" rx="3"/><rect x="625" y="120" width="100" height="24" rx="3"/><rect x="735" y="150" width="110" height="24" rx="3"/>
+        </g>
+        <g fill="#171711" font-size="10.5">
+          <text x="58" y="77">共享 Pack</text><text x="158" y="107">地图产品 MVP</text><text x="288" y="137">语义/时间</text><text x="408" y="77">Pro 真实度</text><text x="518" y="107">Lite 设备</text><text x="628" y="137">Web 8s</text><text x="738" y="167">治理/发布</text>
+        </g>
+        <g fill="#5f6156" font-size="10.5">
+          <text x="55" y="255">0–3w</text><text x="155" y="255">3–7w</text><text x="285" y="255">7–11w</text><text x="405" y="255">11–17w</text><text x="515" y="255">17–23w</text><text x="625" y="255">23–31w</text><text x="735" y="255">31–37w</text>
+        </g>
+      </g>
+    </svg>
+    <div class="caption">图 9 · 单人估算路线图。先做共享 Pack 与地图 MVP，再补语义/时间，最后并行 Pro/Lite/Web。</div>
+  </div>
+
+  <h3>8.3 性能预算与质量评测</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>对象</th><th>指标</th><th>目标</th><th>验证</th></tr></thead>
+      <tbody>
+        <tr><td>Pro</td><td>4096 / 3D</td><td>4096 &lt;30min；3D 60fps</td><td>本地 benchmark</td></tr>
+        <tr><td>Lite</td><td>手机/核显</td><td>512² ≤2s；1024² ≤5s；2048² ≤4s（核显）</td><td>WebGPU/WASM</td></tr>
+        <tr><td>Web</td><td>2048 2D</td><td>p50 ≤8s；p95 ≤10s；cache &lt;1s</td><td>GPU worker 压测</td></tr>
+        <tr><td>2C2G</td><td>控制面</td><td>应用 RSS &lt;512MB；p95 &lt;200ms</td><td>2 workers 压测</td></tr>
+        <tr><td>质量</td><td>对 Pro</td><td>RMSE/SSIM/海岸偏移/河流连续性 + 盲评</td><td>同 seed/区域/尺寸</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>8.3.1 质量 rubric（建议）</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>维度</th><th>观察点</th><th>权重</th><th>测量</th></tr></thead>
+      <tbody>
+        <tr><td>海岸</td><td>海陆边界、岛弧、浅滩、河口</td><td>20%</td><td>海岸线偏移/分形维数/盲评</td></tr>
+        <tr><td>地貌</td><td>山脊连续、坡度分布、盆地/高原</td><td>20%</td><td>hypsometry/坡度直方图</td></tr>
+        <tr><td>水文</td><td>河网连通、湖泊、三角洲、干流</td><td>15%</td><td>Strahler/Hack/连通率</td></tr>
+        <tr><td>气候/群系</td><td>纬向带、雨影、雪线、过渡</td><td>15%</td><td>与 Pro 的 RMSE/分类混淆</td></tr>
+        <tr><td>语义</td><td>区域/城市/道路/标签可读性</td><td>15%</td><td>任务完成/标签碰撞</td></tr>
+        <tr><td>风格</td><td>光照、调色、纸纹、字体、图例</td><td>10%</td><td>盲评偏好</td></tr>
+        <tr><td>一致性</td><td>局部/全球/时间切片不矛盾</td><td>5%</td><td>接缝/切片差异</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>权重是研究用起点，不是产品定论；正式评估应做用户盲评与任务实验，并报告评分者一致性（如 Krippendorff's α）。</p>
+
+  <h3>8.4 风险</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>风险</th><th>概率/影响</th><th>触发信号</th><th>缓解</th></tr></thead>
+      <tbody>
+        <tr><td>Scope 爆炸</td><td>高/高</td><td>同时做 Pro/Lite/Web/编辑器/协作</td><td>Pack→2D→语义/时间→3D→协作，逐阶段 gate</td></tr>
+        <tr><td>近似误差破坏一致性</td><td>中/高</td><td>Lite/Web 海岸/河流偏移</td><td>对 Pro 的 RMSE/SSIM + 边界条件 + 盲评</td></tr>
+        <tr><td>GPU 成本/队列</td><td>中/中</td><td>p95 &gt;10s、缓存命中低</td><td>预热/缓存/批处理/spot/异步降级</td></tr>
+        <tr><td>2C2G OOM</td><td>中/高</td><td>RSS 持续 &gt;1.5GB、OOM kill</td><td>控制面/外部 DB/实时/生成；2 workers</td></tr>
+        <tr><td>产品差异化不足</td><td>中/高</td><td>用户只当“另一个地图编辑器”</td><td>4D 世界/物理一致/3D/可复现 provenance</td></tr>
+        <tr><td>研究效度</td><td>高/中</td><td>无用户实验、无同 benchmark</td><td>明确 E1–E5、盲评、任务实验、复现实验</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ul>
+    <li><strong>Scope risk：</strong>同时做 Pro/Lite/Web/编辑器/协作，团队会被拉爆；必须按 Pack→2D→语义/时间→3D→协作顺序。</li>
+    <li><strong>Model risk：</strong>Lite/Web 的近似误差可能破坏海岸/河流一致性；用 Pro 参考 + 误差指标 + 边界条件约束。</li>
+    <li><strong>Ops risk：</strong>GPU 冷启动/队列/成本；2C2G 不能跑全家桶；用外部 DB/实时服务/CDN。</li>
+    <li><strong>Product risk：</strong>Matrees/VVD 已有用户心智；不要正面拼“编辑器功能”，用“4D 世界引擎 + 分层的产品线”差异化。</li>
+    <li><strong>Validity risk：</strong>本文没有用户实验，质量结论是架构/源码级；后续需要盲评与任务实验。</li>
+  </ul>
+
+  <h3>8.5 评估协议（后续实证）</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>实验</th><th>设计</th><th>指标</th><th>样本/威胁</th></tr></thead>
+      <tbody>
+        <tr><td>E1 架构审计</td><td>源码 + API + 文档三角验证</td><td>覆盖、未知、可复现性</td><td>静态分析 partial；不执行 JS</td></tr>
+        <tr><td>E2 盲评质量</td><td>Pro/Lite/Web/Matrees 风格图；无标签/有标签两组</td><td>偏好、海岸/河流/风格评分</td><td>评分者偏差；需拉丁方/随机化</td></tr>
+        <tr><td>E3 任务实验</td><td>找河流/找城市/判断气候/定位事件</td><td>完成时间、正确率、SUS</td><td>任务难度/学习效应</td></tr>
+        <tr><td>E4 性能</td><td>同硬件/同区域；冷/热缓存</td><td>p50/p95、RSS、GPU 秒</td><td>硬件差异；必须报告配置</td></tr>
+        <tr><td>E5 协作</td><td>3–5 人小组；草稿实时 + 发布审核 vs 纯 CRDT/纯提案</td><td>冲突率、审核负担、满意度</td><td>小样本；质性访谈补充</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>统计上，E2 可用混合效应模型（评分者随机截距、条件固定效应）；E3 用任务级配对/重复测量；E4 报分布而非均值；E5 以质性为主、量化辅助。所有实验预注册指标与排除规则，避免“先看结果再选指标”。</p>
+
+  <h2 id="ch9" class="anchor">第 9 章 · 结论、贡献与未来工作</h2>
+
+  <h3>9.1 理论贡献</h3>
+
+  <p>本文把“世界构建”从功能清单提升为三平面耦合问题：模拟平面提供真值，表示平面提供可读性，社会平面提供协作与治理。这个框架解释了一个常见误判：把 Terrain 与 Matrees 直接比“地图好不好看”，会把“表示/策展”的差距误当成“地形算法”的差距；把 VVD 与 Matrees 直接比“谁更先进”，会把“冲突模型不同”误当成“技术水平不同”。</p>
+
+  <h3>9.2 实践贡献</h3>
+
+  <p>实践上，本文给出三条可执行路径：① Pro 以真实度上限为目标，输出 SeedPack/MapPack；② Lite 以设备端 512–2048 为目标，用基场+程序化/蒸馏残差；③ Web 以 8–10 秒在线 2048 2D 为目标，用 2C2G 控制面 + GPU worker。三者共享 seed/风格/矢量/provenance，但不共享同一组方程；这使“物理深度”与“低部署成本”不再是对立选择。</p>
+
+  <h3>9.3 研究限制</h3>
+
+  <p>本文没有做用户实验，也没有在统一硬件上跑 Matrees/VVD/Terrain 的性能对比；Matrees/VVD 是静态源码+观察，Terrain 是无权重/无输出的源码分析。因此“质量/时延”数字是预算或自报，不是测量。Lite/Web 的模型族是设计提案，尚未实现；8 秒指标依赖缓存骨架，不能外推为“从零生成完整世界”。</p>
+
+  <h3>9.4 未来工作</h3>
+
+  <ol>
+    <li><strong>感知实验：</strong>同一区域下比较 Pro、Lite、Web、Matrees 风格图，做盲评与任务实验，验证“局部 2048 + 语义层”是否缩小差距。</li>
+    <li><strong>误差—成本前沿：</strong>用 RMSE/SSIM/海岸偏移/河流连续性与 GPU 秒数，画 Pareto 前沿，决定 Lite/Web 的模型档位。</li>
+    <li><strong>4D 时间线：</strong>把 0/150/260/450 Myr 切片接入多历法时间线，验证“古地理/纪元”是否提高留存。</li>
+    <li><strong>治理实验：</strong>比较“实时草稿 + 发布审核”与纯 CRDT/纯提案的冲突率、审核负担与作者满意度。</li>
+  </ol>
+
+
+
+  <h3>9.5 总结</h3>
+
+  <p><strong>世界构建系统不是“地图生成器 + 时间线 + 编辑器”的功能集合，而是三个平面的耦合设计。</strong>Matrees 证明了“表示 + 治理”可以做出深度；VVD 证明了“文档 + 实时协作”可以做出低摩擦；Terrain 证明了“物理 + GAN”可以做出真实地形。三者各自的短板，恰好是另外两者的长板。</p>
+
+  <p>因此，本文提出的路线不是“做一个更强的 Matrees”或“做一个更地理的 VVD”，而是：<strong>用 Terrain 做真值引擎，用 Matrees 式地图/治理做表示，用 VVD 式文档/实时做协作，用 Pro/Lite/Web 做算力分层。</strong>Pro 追求真实度上限；Lite 让核显/手机也能生成；Web 用 8–10 秒在线生成标准 2048 2D；2C2G 只做控制面。这样既能保留 Terrain 的物理优势，又能获得 Matrees 的语义/时间/交互/协作/视觉，而不把 2C2G 压垮。</p>
+
+  <h2 id="refs" class="anchor">参考文献、公式与术语</h2>
+
+  <h3>参考文献</h3>
+  <ol class="refs">
+    <li>Matrees 工作台（登录态只读走查、公开 API、13 个 JS chunk 的 REA 静态分析），2026-10-22。站点：<a href="https://www.matrees.cn/">matrees.cn</a>。</li>
+    <li>《Matrees 工作台技术深拆：地图、时间线、历法》，内部技术报告，2026-10-22。</li>
+    <li>VVD 公开站点、Help Center、Changelog、9 个编辑器 JS chunk 的静态分析，2026-10-22。站点：<a href="https://vvd.world/">vvd.world</a>。</li>
+    <li>《VVD vs Matrees：两种世界观创作工作站的实现哲学》，内部比较报告，2026-10-22。</li>
+    <li>Ltz7zip, <em>Fantasy World Simulator</em> v12，GitHub：<a href="https://github.com/Ltz7zip/Fantasy_World_Simulator">github.com/Ltz7zip/Fantasy_World_Simulator</a>；含 README、TECHNICAL、<code>plate_sim.py</code>、<code>generate_world.py</code>、<code>modules/climate_module.py</code>、<code>modules/hydro_module.py</code>。</li>
+    <li>《Terrain 引擎深拆（论文版）：算法、LaTeX 公式、源码与优化路线》，内部研究专著，2026-10-22。</li>
+    <li>《Terrain 引擎优化方案：局部地图、全球地图与高精度 3D》，内部技术报告，2026-10-22。</li>
+    <li>Opuscule 后端/前端地图模块源码（Django/DRF + React），2026-10；仅用于部署边界与数据模型参照。</li>
+  </ol>
+
+  <h3>附录 A · 关键公式与源码映射</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>公式</th><th>含义</th><th>源码/文档</th></tr></thead>
+      <tbody>
+        <tr><td>Eq.1</td><td>Matrees 时间线 x</td><td>时间线布局常量/函数（E1/E4）</td></tr>
+        <tr><td>Eq.2</td><td>历法 ratio/baseYear 换算</td><td><code>/mt/calendar/*</code>；事件 displayTime</td></tr>
+        <tr><td>Eq.3</td><td>VVD 时间线序数（推断）</td><td>官方 Timelines 文档 + 模型推断（E3/E4）</td></tr>
+        <tr><td>Eq.4–8</td><td>Terrain 板块/边界/高程/GAN/气候水文</td><td><code>plate_sim.py</code>、<code>generate_world.py</code>、<code>modules/*</code></td></tr>
+        <tr><td>Eq.9</td><td>Lite/Web 摊销模型</td><td>本文设计；需实现/验证</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>附录 A.1 · LaTeX 公式源码</h3>
+
+  <pre><code>% Eq.1 Matrees timeline x
+x=(y-y_{min})\frac{W}{y_{max}-y_{min}+1}
+ +\frac{m-1}{12}\frac{W}{span}
+ +\frac{d-1}{D_m}\frac{1}{12}\frac{W}{span}
+
+% Eq.2 Matrees calendar
+base=\mathrm{round}\left(\frac{y_{cal}}{ratio}+baseYear\right),\quad
+y_{cal}=\mathrm{round}((base-baseYear)\cdot ratio)
+
+% Eq.3 VVD ordinal (inferred)
+o=Y_{before}D_{year}+D_{beforeMonth}+(d-1)+\frac{h}{H_{day}},\quad
+x=\frac{o-o_{min}}{o_{max}-o_{min}}W
+
+% Eq.4 Terrain Euler / backward mapping
+v_k(r)=\omega_k(a_k\times r),\quad q=R(a_k,-\omega_k\Delta t)r
+
+% Eq.5 boundary
+c_n=-\Delta v\cdot n,\quad
+s=\sqrt{c_n^2+|\Delta v-c_nn|^2},\quad
+c_n&gt;0.35s\Rightarrow\mathrm{convergent}
+
+% Eq.6 terminal elevation
+m_t=\tanh\left(\frac{G_\sigma(\mathrm{orog})}{o_s}\right),\quad
+z=220+430f_1+4900m_t(0.72+0.56f_3)
+
+% Eq.7 GAN + CDF
+x'=F_{\mathrm{ref}}^{-1}(F_{\mathrm{raw}}(x)),\quad
+G(z\mid c),\quad c\in\mathbb{R}^{12\times H\times W}
+
+% Eq.8 climate/hydrology
+T=29-(0.05|\varphi|+0.006\varphi^2)-6.5\frac{z}{1000}
++\Delta T_{ci}-\mathrm{ice}_{cool},\quad
+A_i=s_i+\sum_{j:d(j)=i}A_j
+
+% Eq.9 amortized Lite/Web
+z_L=B_s+\sum_{k=1}^{K}a_kN_k+R_\varphi,\quad z_W=B_s+G_\varphi(c)
+
+% Eq.10 Web latency
+T_{web}\approx T_{lookup}+T_{base}+T_{tile}+T_{style}+T_{encode}
+% Eq.11 error
+e(x)=z_A(x)-z_P(x),\quad
+E_{\mathrm{RMSE}}=\sqrt{\frac{1}{N}\sum_x e^2(x)}</code></pre>
+
+  <pre><code># Terrain: backward mapping (plate_sim.py)
+q = _rot(axes[k], -omg[k] * dt) @ r_flat
+...
+d = np.nonzero(plate_f[src] == k)[0]
+pr = np.where(crust_f[s] == 1, 1e6,
+              np.maximum(0.01, 500.0 - age_f[s]))
+take = pr &gt; claim[d]
+new_plate[dd] = k; new_crust[dd] = crust_f[ss]
+
+# Matrees: calendar (conceptual)
+base = round(calYear / ratio + baseYear)
+calYear = round((base - baseYear) * ratio)
+
+# Lite: base + residual
+z_L = B_s + sum(a_k * N_k) + R_phi</code></pre>
+
+  <h3>附录 B · 实现手册：六条算法</h3>
+
+  <p>下面把前文的公式落成“每一步怎么做”。每条算法都给出输入、操作、输出与检查；实现时可以按表建函数/测试，不必从零猜。</p>
+
+  <h4>B.1 Matrees 保存地图</h4>
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>步骤</th><th>输入</th><th>操作</th><th>输出</th><th>检查</th></tr></thead>
+      <tbody>
+        <tr><td>1 坐标</td><td>editorX/Y</td><td>worldX=editorX；worldY=2048−editorY；unit 比例</td><td>0–2048 世界坐标</td><td>有限/范围</td></tr>
+        <tr><td>2 几何</td><td>feature 列表</td><td>region≥3 点、river≥2 点、city 在陆地、stamp≤400</td><td>合法 feature</td><td>拒绝非法几何</td></tr>
+        <tr><td>3 序列化</td><td>vector/digest</td><td>规范化 JSON；计算 64×64 摘要</td><td>vectorHash/digestHash</td><td>稳定排序</td></tr>
+        <tr><td>4 分块</td><td>heightmap</td><td>按 chunk 切分；SHA-256</td><td>chunkHashes</td><td>hash 一致</td></tr>
+        <tr><td>5 增量</td><td>chunkHashes</td><td>问 missing；只传缺失</td><td>缺失列表</td><td>≤12MB/批</td></tr>
+        <tr><td>6 提交</td><td>manifest + baseDocHash</td><td>乐观并发校验；写 proposal</td><td>proposal/新 manifest</td><td>base 过期则拒绝</td></tr>
+        <tr><td>7 审计</td><td>proposal</td><td>owner/admin 审；audit</td><td>列表/公开页</td><td>角色/权限</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>B.2 Matrees 时间线布局</h4>
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>步骤</th><th>输入</th><th>操作</th><th>输出</th><th>检查</th></tr></thead>
+      <tbody>
+        <tr><td>1 窗口</td><td>事件/纪元</td><td>取 min/max 年；span</td><td>year 范围</td><td>空世界 fallback</td></tr>
+        <tr><td>2 x</td><td>year/month/day</td><td>Eq.1；pxPerYear</td><td>像素 x</td><td>负数/月长</td></tr>
+        <tr><td>3 宽度</td><td>start/end</td><td>|x2−x1|；min 30px</td><td>区间宽</td><td>点事件可点</td></tr>
+        <tr><td>4 排序</td><td>事件</td><td>按 start→区间/长度</td><td>排序列表</td><td>稳定</td></tr>
+        <tr><td>5 行</td><td>排序列表</td><td>5 行 packing；20px padding</td><td>lane</td><td>无重叠</td></tr>
+        <tr><td>6 缩放</td><td>maxLane</td><td>≤8 次 +0.3</td><td>zoom</td><td>最大行≤5</td></tr>
+        <tr><td>7 懒加载</td><td>viewport</td><td>初始 100；±25；1s 节流</td><td>窗口事件</td><td>不阻塞滚动</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>B.3 Terrain 板块单步</h4>
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>步骤</th><th>输入</th><th>操作</th><th>输出</th><th>检查</th></tr></thead>
+      <tbody>
+        <tr><td>1 旋转</td><td>axis/omega/dt</td><td>R(a,−ωΔt)</td><td>旋转矩阵</td><td>正交/单位</td></tr>
+        <tr><td>2 映射</td><td>r 网格</td><td>q=Rr；index</td><td>源格</td><td>极区/边界</td></tr>
+        <tr><td>3 认领</td><td>plate/crust/age</td><td>同板块；陆>年轻洋>老洋</td><td>new_plate</td><td>无多认领</td></tr>
+        <tr><td>4 新生</td><td>未认领</td><td>新洋壳/age=0</td><td>扩张中心</td><td>板块不泄漏</td></tr>
+        <tr><td>5 边界</td><td>邻接板块</td><td>Eq.5；0.35 阈值</td><td>汇聚/离散/转换</td><td>并列处理</td></tr>
+        <tr><td>6 累积</td><td>边界类型</td><td>海沟/弧/碰撞/脊/裂谷</td><td>orog/trench/rift</td><td>范围</td></tr>
+        <tr><td>7 阶段</td><td>time</td><td>150/260/340 切换</td><td>新速度场</td><td>面积归一</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>B.4 Terrain GAN/CDF</h4>
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>步骤</th><th>输入</th><th>操作</th><th>输出</th><th>检查</th></tr></thead>
+      <tbody>
+        <tr><td>1 条件</td><td>骨架/陆海/河网/冰川/纬度/构造</td><td>12 通道；块统计</td><td>条件张量</td><td>shape/NaN</td></tr>
+        <tr><td>2 切窗</td><td>H/W</td><td>256/208/48</td><td>tile 列表</td><td>覆盖完整</td></tr>
+        <tr><td>3 归一</td><td>条件</td><td>标准化；上采样</td><td>模型输入</td><td>均值/方差</td></tr>
+        <tr><td>4 推理</td><td>模型</td><td>逐瓦片</td><td>tile 输出</td><td>显存/批</td></tr>
+        <tr><td>5 混合</td><td>tile/win</td><td>加权叠加</td><td>canvas</td><td>接缝</td></tr>
+        <tr><td>6 CDF</td><td>canvas</td><td>Fref⁻¹(Fraw)；0.60</td><td>校准地形</td><td>峰值/深海</td></tr>
+        <tr><td>7 清理</td><td>校准地形</td><td>despeckle/接缝</td><td>终态</td><td>小岛/湖</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>B.5 Lite 设备端生成</h4>
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>步骤</th><th>输入</th><th>操作</th><th>输出</th><th>检查</th></tr></thead>
+      <tbody>
+        <tr><td>1 载入</td><td>SeedPack</td><td>下载/缓存/校验</td><td>base/climate/hydro</td><td>hash</td></tr>
+        <tr><td>2 视口</td><td>camera</td><td>可见区域/裁剪</td><td>region</td><td>边界</td></tr>
+        <tr><td>3 基场</td><td>B_s</td><td>双线性/样条</td><td>base tile</td><td>连续</td></tr>
+        <tr><td>4 细节</td><td>base+noise</td><td>fBm/ridged/SDF/轻侵蚀</td><td>detail</td><td>坡度/法线</td></tr>
+        <tr><td>5 水系</td><td>hydro</td><td>河宽/蓝度/下切</td><td>river</td><td>连通</td></tr>
+        <tr><td>6 风格</td><td>style</td><td>LUT/群系/标签</td><td>RGB/2D</td><td>可读</td></tr>
+        <tr><td>7 输出</td><td>canvas</td><td>缓存/低 LOD 3D</td><td>帧</td><td>≤2–5s/内存</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>B.6 Web 8 秒请求</h4>
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>步骤</th><th>输入</th><th>操作</th><th>输出</th><th>检查</th></tr></thead>
+      <tbody>
+        <tr><td>1 鉴权</td><td>session/quota</td><td>校验/限流</td><td>job</td><td>权限</td></tr>
+        <tr><td>2 缓存</td><td>seed/region/style/time</td><td>hash→URL</td><td>hit/miss</td><td>&lt;1s</td></tr>
+        <tr><td>3 骨架</td><td>SeedPack</td><td>加载/预热</td><td>base</td><td>版本</td></tr>
+        <tr><td>4 细节</td><td>base/条件</td><td>局部 2048 生成</td><td>tile</td><td>2.5–4s</td></tr>
+        <tr><td>5 风格</td><td>style/vector</td><td>LUT/标签/图例</td><td>RGB</td><td>1–1.5s</td></tr>
+        <tr><td>6 编码</td><td>RGB</td><td>WebP/AVIF + 缩略图</td><td>object</td><td>0.5–1s</td></tr>
+        <tr><td>7 交付</td><td>object/job</td><td>SSE 进度/URL</td><td>result</td><td>p95≤10s</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>附录 C · 术语</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>术语</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td>三平面</td><td>模拟（truth）/表示（map/time）/社会（collab/governance）</td></tr>
+        <tr><td>SeedPack</td><td>Pro 预计算的全球骨架 + 气候/河网/风格，供 Lite/Web 采样</td></tr>
+        <tr><td>MapPack / terrainpack</td><td>瓦片、矢量、时间切片、3D Tiles、manifest、provenance 的打包</td></tr>
+        <tr><td>摊销近似</td><td>把昂贵的模拟/生成结果缓存/蒸馏，运行时只做局部条件生成</td></tr>
+        <tr><td>提案/审核</td><td>Matrees 式写入治理：proposal → audit → 发布</td></tr>
+        <tr><td>CRDT</td><td>VVD 式实时协作的无冲突复制数据类型（Yjs）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>附录 D · 研究限制</h3>
+
+  <p>（1）Matrees/VVD 是静态分析与登录态观察，不执行捕获 JS；运行时行为、性能、错误路径仍有 unknown。（2）Terrain 仓库缺权重/数据/输出，未实际生成地图；公式/管线来自源码/文档，不能做像素级质量结论。（3）性能数字是仓库自报或目标预算，不是同一硬件 benchmark。（4）没有用户实验；感知质量结论需后续盲评与任务实验验证。</p>
+
+  <p class="note">本文采用博士论文式结构，但不是任何机构的学位论文；引用内部技术报告时按“技术报告/源码分析”处理，不作为同行评审文献。</p>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,1207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terrain 引擎深拆（论文版）：算法、LaTeX 公式、源码与优化路线</title>
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #f7f6f1; --ink: #171711; --muted: #5f6156; --faint: #898b7e;
+    --rule: #e0dfd4; --soft: #efeee5; --accent: #2457a6; --accent-2: #b8752e;
+    --accent-soft: #e7eef8; --night: #0d0e0a; --night-ink: #f5f6ed;
+    --warn: #8a5a00; --warn-soft: #fbf3df; --crit: #a02a2a; --crit-soft: #f9e9e9;
+    --code-bg: #eae9dd;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --paper: #131510; --ink: #f1f3e9; --muted: #b4b8aa; --faint: #8d9284;
+      --rule: #2e3128; --soft: #1b1e17; --accent: #9ec1ff; --accent-2: #e29a6c;
+      --accent-soft: #172033; --night: #070806; --night-ink: #f4f7ec;
+      --warn: #e0b15a; --warn-soft: #251f10; --crit: #f08a8a; --crit-soft: #271616;
+      --code-bg: #23271d;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.75 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; text-rendering: optimizeLegibility; }
+  .page { max-width: 86ch; margin: 0 auto; padding: 0 24px 96px; overflow-wrap: break-word; }
+  .hero { margin: 0 0 38px; padding: 54px 24px 40px; background: radial-gradient(900px 280px at 14% -10%, rgba(36, 87, 166, .28), transparent 60%), var(--night); color: var(--night-ink); border-bottom: 3px solid var(--accent-2); }
+  .hero-inner { max-width: 86ch; margin: 0 auto; }
+  .kicker { font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .16em; text-transform: uppercase; color: #9ec1ff; margin: 0 0 16px; }
+  h1, h2, h3, h4 { font-family: ui-serif, "Songti SC", "Noto Serif SC", Georgia, serif; font-weight: 600; line-height: 1.25; }
+  h1 { font-size: clamp(31px, 5vw, 46px); margin: 0 0 16px; letter-spacing: -.02em; }
+  .hero .lede { color: #d4d7c8; font-size: 17px; line-height: 1.7; margin: 0; max-width: 70ch; }
+  .hero .lede strong { color: #fff; }
+  .hero-meta { margin-top: 22px; color: #9aa08f; font-size: 13px; line-height: 1.7; }
+  h2 { font-size: 27px; margin: 54px 0 14px; padding-top: 12px; border-top: 1px solid var(--rule); }
+  h3 { font-size: 20px; margin: 28px 0 8px; }
+  h4 { font-size: 16.5px; margin: 20px 0 6px; }
+  p { margin: 0 0 14px; }
+  .meta { color: var(--faint); font-size: 13px; line-height: 1.7; }
+  .badge { display: inline-block; font: 600 11px/1.5 ui-monospace, monospace; letter-spacing: .04em; padding: 1px 7px; border-radius: 3px; white-space: nowrap; vertical-align: 1px; }
+  .b-good { color: var(--accent); background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+  .b-warn { color: var(--warn); background: var(--warn-soft); border: 1px solid color-mix(in srgb, var(--warn) 28%, transparent); }
+  .b-crit { color: var(--crit); background: var(--crit-soft); border: 1px solid color-mix(in srgb, var(--crit) 28%, transparent); }
+  .verdict { display: grid; grid-template-columns: 1fr auto; gap: 22px; align-items: center; margin: 26px 0 8px; padding: 22px 24px; background: var(--soft); border-left: 4px solid var(--accent); }
+  .verdict .label { font: 600 11px/1.4 ui-monospace, monospace; letter-spacing: .12em; color: var(--faint); text-transform: uppercase; }
+  .verdict p { margin: 8px 0 0; font-size: 17px; line-height: 1.65; }
+  .big { font: 600 29px/1.1 ui-serif, "Songti SC", Georgia, serif; color: var(--accent); white-space: nowrap; text-align: center; }
+  .big span { display: block; font: 11px/1.5 ui-monospace, monospace; color: var(--muted); margin-top: 5px; white-space: normal; }
+  .toc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 28px; margin: 26px 0 8px; padding: 18px 20px; border: 1px solid var(--rule); font-size: 14px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--rule); padding: 2px 0; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .toc .n { color: var(--faint); font: 11px ui-monospace, monospace; margin-right: 7px; }
+  .scroll { overflow-x: auto; margin: 16px 0 22px; border: 1px solid var(--rule); background: var(--paper); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.55; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--rule); }
+  th { font: 600 11px/1.5 ui-monospace, monospace; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); background: var(--soft); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .88em; background: var(--code-bg); color: var(--ink); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+  pre { margin: 14px 0 20px; padding: 14px 16px; overflow-x: auto; max-width: 100%; background: var(--code-bg); border: 1px solid var(--rule); border-left: 3px solid var(--accent); font: 12.5px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--ink); }
+  pre code { background: none; padding: 0; font-size: 12.5px; overflow-wrap: normal; }
+  .equation { margin: 18px 0 8px; padding: 14px 16px 12px; background: var(--soft); border: 1px solid var(--rule); border-left: 3px solid var(--accent); overflow-x: auto; }
+  .equation .eq-label { font: 600 10px/1.5 ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+  .equation math { display: block; text-align: center; font-size: 1.18em; font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", "Times New Roman", serif; }
+  .equation .eq-note { font-size: 12.5px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+  details { margin: 8px 0 18px; border: 1px solid var(--rule); background: var(--paper); }
+  details summary { cursor: pointer; padding: 8px 12px; font: 600 12px/1.5 ui-monospace, monospace; color: var(--accent); background: var(--soft); }
+  details[open] summary { border-bottom: 1px solid var(--rule); }
+  details pre { margin: 0; border: 0; border-left: 0; background: var(--code-bg); }
+  .callout { margin: 20px 0; padding: 15px 18px; border: 1px solid var(--rule); border-left: 3px solid var(--accent); background: var(--soft); font-size: 14.5px; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+  .callout.crit { border-left-color: var(--crit); background: var(--crit-soft); }
+  .callout p:last-child { margin-bottom: 0; }
+  ul, ol { margin: 10px 0 16px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .tight li { margin: 2px 0; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 26px; margin: 16px 0 22px; }
+  .grid2 > * { min-width: 0; }
+  .stat { border-top: 2px solid var(--rule); padding-top: 10px; }
+  .stat b { display: block; font: 600 26px/1.1 ui-serif, "Songti SC", Georgia, serif; color: var(--ink); }
+  .stat span { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .box { border: 1px solid var(--rule); padding: 16px 18px; background: var(--paper); min-width: 0; }
+  .box h4 { margin-top: 0; }
+  .box ul { margin-bottom: 0; }
+  .box li, .box p { overflow-wrap: anywhere; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 28px; }
+  .split > * { min-width: 0; }
+  .figure { margin: 22px 0 26px; border: 1px solid var(--rule); background: var(--soft); padding: 14px; }
+  .figure svg { display: block; width: 100%; height: auto; }
+  .figure figcaption { font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.6; }
+  .quote { margin: 22px 0; padding: 18px 22px; border-left: 3px solid var(--accent-2); background: var(--night); color: var(--night-ink); font-family: ui-serif, "Songti SC", Georgia, serif; font-size: 18px; line-height: 1.7; }
+  .quote small { display: block; margin-top: 8px; font: 11px/1.5 ui-monospace, monospace; color: #9aa38f; }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  .footnote { font-size: 12.5px; color: var(--faint); line-height: 1.65; }
+  .anchor { scroll-margin-top: 20px; }
+  .evidence { font-size: 12.5px; color: var(--muted); line-height: 1.65; border-left: 2px solid var(--accent-2); padding-left: 12px; margin: 12px 0 18px; overflow-wrap: anywhere; }
+  .tag { font: 600 10px/1.5 ui-monospace, monospace; color: var(--faint); border: 1px solid var(--rule); padding: 1px 5px; border-radius: 3px; white-space: nowrap; }
+  @media (max-width: 760px) {
+    .page { padding: 0 18px 70px; }
+    .hero { margin: 0 0 30px; padding: 36px 18px 30px; }
+    .verdict { grid-template-columns: 1fr; }
+    .big { text-align: left; }
+    .toc { grid-template-columns: 1fr; }
+    .grid2, .split { grid-template-columns: 1fr; }
+    th, td { padding: 8px 9px; }
+    .wide-table { min-width: 760px; }
+    .equation { padding: 10px 10px 8px; }
+    .equation math { font-size: 1em; }
+  }
+  @media print {
+    body { background: #fff; color: #000; }
+    .page { max-width: none; padding: 0; }
+    .hero { background: #000; color: #fff; margin: 0; }
+    h2 { break-after: avoid; }
+    .scroll, .callout, .verdict, .quote, .figure, .equation { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hero-inner">
+    <p class="kicker">Terrain engine paper edition · algorithms · LaTeX · source · 2026-10-22</p>
+    <h1>Terrain 引擎深拆（论文版）：<br>算法、LaTeX 公式、源码与优化路线</h1>
+    <p class="lede">在上一版白皮书基础上继续下钻：<strong>把每个模型写成可检查的公式，把公式对应到 Python 源码，把源码对应到假设与缺口。</strong>公式以 LaTeX 编写并内嵌在 MathML 的 <code>annotation</code> 中，页面离线渲染；文末附全部 LaTeX 源码，可直接复制。</p>
+    <p class="hero-meta">范围：Fantasy World Simulator v12 的 <code>plate_sim.py</code>、<code>generate_world.py</code>、<code>modules/climate_module.py</code>、<code>modules/hydro_module.py</code>、<code>export_3d.py</code> 与 TECHNICAL/README。所有公式都标注“代码形式/概念形式”；文档与实现冲突处不掩盖。</p>
+  </div>
+</div>
+
+<main class="page">
+
+  <div class="verdict">
+    <div>
+      <div class="label">Thesis</div>
+      <p><strong>这台引擎的核心不是一组漂亮方程，而是一条“物理骨架 + 经验装配 + 学习纹理”的混合流水线。</strong>它已经能稳定地长出可信的大陆、山脉、河流、气候与纹理；真正缺的是<strong>时间维、质量/能量守恒、岩石圈力学与双向耦合</strong>。因此优化顺序是：先暴露 450 Myr，再补守恒，再补 flexure/季节气候，最后才谈全地幔/全 GCM。</p>
+    </div>
+    <div class="big">K–G–H<span>Kinematic · Geomorphic · Hybrid</span></div>
+  </div>
+
+  <nav class="toc" aria-label="目录">
+    <a href="#boundary"><span class="n">01</span>系统边界与代码地图</a>
+    <a href="#notation"><span class="n">02</span>符号、状态与主流程</a>
+    <a href="#plate"><span class="n">03</span>板块演化：运动学与公式</a>
+    <a href="#assembly"><span class="n">04</span>构造场与地形装配</a>
+    <a href="#gan"><span class="n">05</span>GAN 细节生成</a>
+    <a href="#climate"><span class="n">06</span>气候：温度、降水、群系</a>
+    <a href="#hydro"><span class="n">07</span>水文与侵蚀</a>
+    <a href="#render"><span class="n">08</span>渲染与 3D</a>
+    <a href="#audit"><span class="n">09</span>模型审计：物理 vs 规则</a>
+    <a href="#gaps"><span class="n">10</span>结构性不足与优化路线</a>
+    <a href="#compare"><span class="n">11</span>与 Matrees / VVD 的定位对比</a>
+    <a href="#pro"><span class="n">12</span>Terrain Pro：真实度上限</a>
+    <a href="#lite"><span class="n">13</span>Terrain Lite：设备端轻量生成</a>
+    <a href="#web"><span class="n">14</span>Terrain Web：8 秒在线生成</a>
+    <a href="#models3"><span class="n">15</span>三套数学模型：Pro / Lite / Web</a>
+    <a href="#ship"><span class="n">16</span>三产品路线与验收</a>
+    <a href="#latex"><span class="n">17</span>LaTeX 源码与 Python 源码索引</a>
+  </nav>
+
+  <h2 id="boundary" class="anchor">01 · 系统边界与代码地图</h2>
+
+  <p>先把“引擎”的边界说清楚：v12 包含<strong>世界生成</strong>与<strong>世界呈现</strong>两大部分，但只有生成部分有物理/规则模型；呈现部分主要是颜色、山影、河流叠加与 3D 导出。它不是气候模式，也不是地幔对流模型；它是一个<strong>为世界构建服务的地形合成器</strong>。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>模块</th><th>职责</th><th>关键函数</th><th>数学类型</th></tr></thead>
+      <tbody>
+        <tr><td><code>plate_sim.py</code></td><td>450 Myr 球面板块演化；输出粗 DEM、4 构造场、陆壳、边缘类型、山带、裂谷</td><td><code>run_plate_sim</code>、<code>_classify</code>、<code>split_supercontinent</code></td><td>刚体运动学 + 规则装配</td></tr>
+        <tr><td><code>tectonics.py</code></td><td>边界邻近场：俯冲/碰撞/离散/转换</td><td><code>proximity_fields</code></td><td>几何空间场</td></tr>
+        <tr><td><code>generate_world.py</code></td><td>主管线：骨架、GAN、CDF、去斑、侵蚀、河网、气候、渲染、3D</td><td><code>generate_world</code>、<code>render_world</code></td><td>混合流水线</td></tr>
+        <tr><td><code>modules/climate_module.py</code></td><td>温度、降水、Whittaker 9 类群系</td><td><code>temperature_field</code>、<code>precipitation_field</code>、<code>whittaker_biome</code></td><td>诊断式气候</td></tr>
+        <tr><td><code>modules/hydro_module.py</code></td><td>填洼、D8 汇流、河网、粒子侵蚀、河宽/蜿蜒、湖泊</td><td><code>d8_flow_accumulation</code>、<code>droplet_erosion</code>、<code>carve_trunk_rivers</code></td><td>过程/形态混合</td></tr>
+        <tr><td><code>dl/</code></td><td>GAN/扩散/SRNet/物理监督网络</td><td><code>UNet</code>、<code>DiffusionPipeline</code>、<code>SRNet</code></td><td>数据驱动</td></tr>
+        <tr><td><code>export_3d.py</code></td><td>平面/球体 OBJ、glTF、纹理、海平面裁剪</td><td><code>export_world</code></td><td>几何导出</td></tr>
+        <tr><td><code>supervisor/</code></td><td>七维指标审计、反思、overrides、学习日志</td><td><code>metrics</code>、<code>reflector</code></td><td>经验评估</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="evidence">代码位置：<a href="https://github.com/Ltz7zip/Fantasy_World_Simulator/blob/main/terrain/core/plate_sim.py">plate_sim.py</a>、<a href="https://github.com/Ltz7zip/Fantasy_World_Simulator/blob/main/terrain/core/generate_world.py">generate_world.py</a>、<a href="https://github.com/Ltz7zip/Fantasy_World_Simulator/blob/main/terrain/modules/climate_module.py">climate_module.py</a>、<a href="https://github.com/Ltz7zip/Fantasy_World_Simulator/blob/main/terrain/modules/hydro_module.py">hydro_module.py</a>、<a href="https://github.com/Ltz7zip/Fantasy_World_Simulator/blob/main/terrain/docs/TECHNICAL.md">TECHNICAL.md</a>。</p>
+
+  <h2 id="notation" class="anchor">02 · 符号、状态与主流程</h2>
+
+  <h3>2.1 符号表</h3>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>符号</th><th>含义</th><th>单位/范围</th></tr></thead>
+      <tbody>
+        <tr><td><i>T</i></td><td>板块模拟网格单边像素数，默认 512</td><td>512</td></tr>
+        <tr><td><i>K</i></td><td>主板块数，默认 12；另有 4–6 个微大陆</td><td>12 + 4–6</td></tr>
+        <tr><td><i>Δt</i></td><td>时间步，默认 0.625 Myr；720 步 ≈ 450 Myr</td><td>Myr</td></tr>
+        <tr><td><i>r</i></td><td>单位球面上的位置向量</td><td>|r| = 1</td></tr>
+        <tr><td><i>a<sub>k</sub>, ω<sub>k</sub></i></td><td>板块 k 的欧拉轴与角速度</td><td>单位向量 / rad·step⁻¹</td></tr>
+        <tr><td><i>C, A</i></td><td>地壳类型（陆/洋）与洋壳年龄</td><td>0/1；Myr</td></tr>
+        <tr><td><i>z, T, P, B</i></td><td>高程、温度、降水、群系</td><td>m / °C / mm·yr⁻¹ / class</td></tr>
+        <tr><td><i>A<sub>i</sub></i></td><td>D8 汇流累积量（汇水面积代理）</td><td>cell count</td></tr>
+        <tr><td><i>o<sub>s</sub></i></td><td>造山强度尺度；由 <code>re_v</code> 等控制</td><td>归一化</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>2.2 主流程</h3>
+
+  <p>数据流是单向的：板块 → 构造场 → 地形骨架 → GAN → 全球后处理 → 气候/水文 → 渲染/3D。没有“气候改变侵蚀、侵蚀改变均衡、海洋改变气候”的反馈环；这是后面要补的核心结构。</p>
+
+  <figure class="figure">
+    <svg viewBox="0 0 980 420" role="img" aria-label="Terrain v12 主流程：板块、构造、骨架、GAN、后处理、气候水文、渲染与3D">
+      <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <g font-family="system-ui, sans-serif" font-size="11.5" fill="#171711">
+        <rect x="20" y="28" width="160" height="50" rx="5" fill="#e7eef8" stroke="#2457a6"/>
+        <text x="34" y="49" font-weight="600">PlanetParams + seed</text>
+        <text x="34" y="66" fill="#5f6156">半径/海洋/自转</text>
+        <rect x="200" y="28" width="180" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="214" y="49" font-weight="600">板块演化 450 Myr</text>
+        <text x="214" y="66" fill="#5f6156">720 步 × 512² × 12 板块</text>
+        <rect x="400" y="28" width="170" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="414" y="49" font-weight="600">4 构造场</text>
+        <text x="414" y="66" fill="#5f6156">俯冲/离散/转换/余裕</text>
+        <rect x="590" y="28" width="170" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="604" y="49" font-weight="600">地形骨架</text>
+        <text x="604" y="66" fill="#5f6156">洋深/陆架/山带/裂谷</text>
+        <rect x="780" y="28" width="180" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="794" y="49" font-weight="600">岸线/域扭曲</text>
+        <text x="794" y="66" fill="#5f6156">海岸分形级联</text>
+        <path d="M180 53 H200 M380 53 H400 M570 53 H590 M760 53 H780" stroke="#2457a6" stroke-width="1.3" marker-end="url(#a)"/>
+
+        <rect x="20" y="120" width="180" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="34" y="141" font-weight="600">12 通道条件</text>
+        <text x="34" y="158" fill="#5f6156">块统计/陆海/河网/冰川/纬度/构造</text>
+        <rect x="220" y="120" width="180" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="234" y="141" font-weight="600">GAN 256² 瓦片</text>
+        <text x="234" y="158" fill="#5f6156">100 片(2048)/400 片(4096)</text>
+        <rect x="420" y="120" width="180" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="434" y="141" font-weight="600">CDF + 去斑</text>
+        <text x="434" y="158" fill="#5f6156">包络匹配/直方图/接缝</text>
+        <rect x="620" y="120" width="170" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="634" y="141" font-weight="600">侵蚀 + 河网</text>
+        <text x="634" y="158" fill="#5f6156">D8/粒子/干流雕刻</text>
+        <rect x="810" y="120" width="150" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="824" y="141" font-weight="600">气候</text>
+        <text x="824" y="158" fill="#5f6156">T/P/群系</text>
+        <path d="M200 145 H220 M400 145 H420 M600 145 H620 M790 145 H810" stroke="#2457a6" stroke-width="1.3" marker-end="url(#a)"/>
+        <path d="M870 78 V120" stroke="#2457a6" stroke-width="1.3" marker-end="url(#a)"/>
+
+        <rect x="20" y="215" width="190" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="34" y="236" font-weight="600">Whittaker 9 类</text>
+        <text x="34" y="253" fill="#5f6156">T/P → biome</text>
+        <rect x="230" y="215" width="180" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="244" y="236" font-weight="600">雪线/海冰</text>
+        <text x="244" y="253" fill="#5f6156">纬度 + 干旱 + 温度</text>
+        <rect x="430" y="215" width="180" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="444" y="236" font-weight="600">渲染 RGB</text>
+        <text x="444" y="253" fill="#5f6156">群系色 × 山影 × 海深</text>
+        <rect x="630" y="215" width="170" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="644" y="236" font-weight="600">PNG/DEM/HTML</text>
+        <text x="644" y="253" fill="#5f6156">2D 成品/诊断</text>
+        <rect x="820" y="215" width="140" height="50" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="834" y="236" font-weight="600">3D OBJ/glTF</text>
+        <text x="834" y="253" fill="#5f6156">平面/球体</text>
+        <path d="M210 240 H230 M410 240 H430 M610 240 H630 M800 240 H820" stroke="#2457a6" stroke-width="1.3" marker-end="url(#a)"/>
+        <path d="M890 170 V215" stroke="#2457a6" stroke-width="1.3" marker-end="url(#a)"/>
+
+        <rect x="20" y="320" width="430" height="54" rx="5" fill="#fbf3df" stroke="#8a5a00" stroke-dasharray="5 4"/>
+        <text x="34" y="342" font-weight="600">缺失：时间切片</text>
+        <text x="34" y="359" fill="#5f6156">450 Myr 过程不可见；只输出终态</text>
+        <rect x="470" y="320" width="490" height="54" rx="5" fill="#fbf3df" stroke="#8a5a00" stroke-dasharray="5 4"/>
+        <text x="484" y="342" font-weight="600">缺失：守恒与反馈</text>
+        <text x="484" y="359" fill="#5f6156">泥沙/能量不闭合；气候—侵蚀—均衡不闭环</text>
+      </g>
+    </svg>
+    <figcaption>主流程的“物理骨架”在前半段，“经验/学习”在后半段；时间、守恒和反馈环是结构性空白。</figcaption>
+  </figure>
+
+  <h2 id="plate" class="anchor">03 · 板块演化：运动学与公式</h2>
+
+  <h3>3.1 球面几何</h3>
+
+  <p>模拟使用等经纬 <i>T</i>×<i>T</i> 网格。格心映射到单位球面：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 1 · spherical grid</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>=</mo><mrow><mo>(</mo><mi>cos</mi><mi>φ</mi><mi>cos</mi><mi>λ</mi><mo>,</mo><mi>cos</mi><mi>φ</mi><mi>sin</mi><mi>λ</mi><mo>,</mo><mi>sin</mi><mi>φ</mi><mo>)</mo></mrow></mrow><annotation encoding="application/x-tex">r=(\cos\varphi\cos\lambda,\ \cos\varphi\sin\lambda,\ \sin\varphi)</annotation></semantics></math>
+    <div class="eq-note">φ 为纬度，λ 为经度。等经纬网格在极区格元面积变小，但当前板块面积/陆地比例多用未加权 <code>mean()</code> 统计，这是一个尺度偏差源。</div>
+  </div>
+
+  <h3>3.2 欧拉运动与后向映射</h3>
+
+  <p>每个板块是一个刚体，绕欧拉轴 <i>a<sub>k</sub></i> 以角速度 <i>ω<sub>k</sub></i> 旋转：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 2 · Euler velocity</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>v</mi><mi>k</mi></msub><mo>(</mo><mi>r</mi><mo>)</mo><mo>=</mo><msub><mi>ω</mi><mi>k</mi></msub><mrow><mo>(</mo><msub><mi>a</mi><mi>k</mi></msub><mo>×</mo><mi>r</mi><mo>)</mo></mrow></mrow><annotation encoding="application/x-tex">v_k(r)=\omega_k\,(a_k\times r)</annotation></semantics></math>
+  </div>
+
+  <p>代码不做“把源点推到目的地”，而是对每个目的地做<strong>逆旋转</strong>找源点，因此面积守恒、不会出现多板块争抢同一格：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 3 · backward mapping</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>q</mi><mo>=</mo><mi>R</mi><mo>(</mo><msub><mi>a</mi><mi>k</mi></msub><mo>,</mo><mo>−</mo><msub><mi>ω</mi><mi>k</mi></msub><mi>Δ</mi><mi>t</mi><mo>)</mo><mi>r</mi><mo>,</mo><mspace width="0.5em"/><mi>source</mi><mo>=</mo><mi>index</mi><mo>(</mo><mi>q</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">q=R(a_k,-\omega_k\Delta t)\,r,\quad \mathrm{source}=\mathrm{index}(q)</annotation></semantics></math>
+    <div class="eq-note">源格必须仍属于板块 k；否则该目的地不被认领。未被认领的格子继承上一帧板块号，地壳/年龄留空 → 扩张中心新生洋壳。</div>
+  </div>
+
+  <h3>3.3 聚合期速度场</h3>
+
+  <p>聚合期不是固定角速度，而是“朝聚合中心 <i>c</i> 的差速收敛”：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 4 · aggregation velocity</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>u</mi><mo>=</mo><mi>c</mi><mo>−</mo><mo>(</mo><mi>c</mi><mo>⋅</mo><mi>p</mi><mo>)</mo><mi>p</mi><mo>,</mo><mspace width="0.5em"/><mi>axis</mi><mo>=</mo><mfrac><mrow><mi>p</mi><mo>×</mo><mi>u</mi></mrow><mrow><mo>|</mo><mi>p</mi><mo>×</mo><mi>u</mi><mo>|</mo></mrow></mfrac><mo>,</mo><mspace width="0.5em"/><msub><mi>ω</mi><mi>k</mi></msub><mo>=</mo><mi>clip</mi><mrow><mo>(</mo><mfrac><mrow><mi>angle</mi><mo>(</mo><mi>p</mi><mo>,</mo><mi>c</mi><mo>)</mo></mrow><mrow><mi>H</mi><mi>Δ</mi><mi>t</mi></mrow></mfrac><mo>)</mo></mrow><mo>⋅</mo><mo>(</mo><mn>1</mn><mo>+</mo><mi>ε</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">u=c-(c\cdot p)p,\quad \mathrm{axis}=\frac{p\times u}{|p\times u|},\quad \omega_k=\mathrm{clip}\left(\frac{\mathrm{angle}(p,c)}{H\Delta t}\right)(1+\varepsilon)</annotation></semantics></math>
+    <div class="eq-note">近处慢、远处快，<i>H</i> 步后同时到达 <i>c</i>；ε 是 0.15 量级的抖动。裂解期用共享欧拉轴对旋 <i>e=a×p<sub>c</sub></i>，两侧 ±0.006 rad/step。</div>
+  </div>
+
+  <h3>3.4 边界分类</h3>
+
+  <p>对相邻板块格，速度差在边界法向上的投影决定汇聚/离散：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 5 · boundary kinematics</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><mi>v</mi><mo>=</mo><msub><mi>v</mi><mi>A</mi></msub><mo>−</mo><msub><mi>v</mi><mi>B</mi></msub><mo>,</mo><mspace width="0.5em"/><mi>n</mi><mo>=</mo><mfrac><mrow><msub><mi>r</mi><mi>B</mi></msub><mo>−</mo><msub><mi>r</mi><mi>A</mi></msub></mrow><mrow><mo>|</mo><msub><mi>r</mi><mi>B</mi></msub><mo>−</mo><msub><mi>r</mi><mi>A</mi></msub><mo>|</mo></mrow></mfrac><mo>,</mo><mspace width="0.5em"/><msub><mi>c</mi><mi>n</mi></msub><mo>=</mo><mo>−</mo><mi>Δ</mi><mi>v</mi><mo>⋅</mo><mi>n</mi><mo>,</mo><mspace width="0.5em"/><mi>s</mi><mo>=</mo><msqrt><mrow><msubsup><mi>c</mi><mi>n</mi><mn>2</mn></msubsup><mo>+</mo><msup><mrow><mo>|</mo><mi>Δ</mi><mi>v</mi><mo>−</mo><msub><mi>c</mi><mi>n</mi></msub><mi>n</mi><mo>|</mo></mrow><mn>2</mn></msup></mrow></msqrt></mrow><annotation encoding="application/x-tex">\Delta v=v_A-v_B,\quad n=\frac{r_B-r_A}{|r_B-r_A|},\quad c_n=-\Delta v\cdot n,\quad s=\sqrt{c_n^2+|\Delta v-c_n n|^2}</annotation></semantics></math>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 6 · convergence / divergence</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext>convergent if </mtext><msub><mi>c</mi><mi>n</mi></msub><mo>&gt;</mo><mn>0.35</mn><mi>s</mi><mo>,</mo><mspace width="0.4em"/><mtext>divergent if </mtext><msub><mi>c</mi><mi>n</mi></msub><mo>&lt;</mo><mo>−</mo><mn>0.35</mn><mi>s</mi></mrow><annotation encoding="application/x-tex">\mathrm{convergent\ if\ }c_n&gt;0.35s,\quad \mathrm{divergent\ if\ }c_n&lt;-0.35s</annotation></semantics></math>
+    <div class="eq-note">再按洋—陆、洋—洋、陆—陆组合分配海沟/弧/碰撞/脊/裂谷。0.35 是“汇聚/走滑”的角度阈值，不是物理摩擦系数。</div>
+  </div>
+
+  <h3>3.5 终局高程装配</h3>
+
+  <p>碰撞累积的 <i>orog</i> 并不是直接变高程，而是先 tanh 压缩、再与分形场组合；前陆盆地与克拉通再叠加：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 7 · terminal land elevation</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mi>t</mi></msub><mo>=</mo><mi>tanh</mi><mrow><mo>(</mo><mfrac><mrow><msub><mi>G</mi><mi>σ</mi></msub><mo>(</mo><mi>orog</mi><mo>)</mo></mrow><msub><mi>o</mi><mi>s</mi></msub></mfrac><mo>)</mo></mrow><mo>,</mo><mspace width="0.5em"/><mi>z</mi><mo>=</mo><mn>220</mn><mo>+</mo><mn>430</mn><msub><mi>f</mi><mn>1</mn></msub><mo>+</mo><mn>4900</mn><msub><mi>m</mi><mi>t</mi></msub><mo>(</mo><mn>0.72</mn><mo>+</mo><mn>0.56</mn><msub><mi>f</mi><mn>3</mn></msub><mo>)</mo></mrow><annotation encoding="application/x-tex">m_t=\tanh\left(\frac{G_\sigma(\mathrm{orog})}{o_s}\right),\quad z=220+430f_1+4900m_t(0.72+0.56f_3)</annotation></semantics></math>
+    <div class="eq-note">随后减去前陆项 <i>800·tanh(2·fore/fore<sub>max</sub>)</i>，克拉通区域与 150–380 m 台地混合，裂谷再做线性下切/肩部抬升。这里的系数是地球形态校准值，不是力学解。</div>
+  </div>
+
+  <details><summary>Python 源码 · plate_sim.py / 后向映射与认领</summary><pre><code>q = _rot(axes[k], -omg[k] * dt) @ r_flat
+la = np.arcsin(np.clip(q[2], -1, 1))
+lo = np.arctan2(q[1], q[0])
+ri = np.clip(((0.5 - la / np.pi) * T).astype(np.int64), 0, T - 1)
+ci = ((lo / (2 * np.pi)) % 1.0 * T).astype(np.int64) % T
+src = ri * T + ci
+d = np.nonzero(plate_f[src] == k)[0]
+...
+pr = np.where(crust_f[s] == 1, 1e6,
+              np.maximum(0.01, 500.0 - age_f[s])).astype(np.float32)
+take = pr &gt; claim[d]   # 陆 &gt; 年轻洋 &gt; 老洋
+new_plate[dd] = k; new_crust[dd] = crust_f[ss]
+new_age[dd] = age_f[ss]; claim[dd] = pr[take]</code></pre></details>
+
+  <details><summary>Python 源码 · plate_sim.py / 边界分类</summary><pre><code>nv = (rb - ra).T
+nv /= (np.linalg.norm(nv, axis=1, keepdims=True) + 1e-12)
+cn = -(dv * nv).sum(1)
+dvp = (dv * nv).sum(1)[:, None] * nv
+am = np.linalg.norm(dv - dvp, axis=1)
+s = np.hypot(cn, am) + 1e-9
+conv, div = cn &gt; 0.35 * s, cn &lt; -0.35 * s
+trans = ~conv &amp; ~div</code></pre></details>
+
+  <div class="callout warn"><p><strong>模型边界：</strong>速度场由三阶段目标驱动，不是地幔对流/板块驱动力涌现；没有 flexural/Airy isostasy、动态海平面、沉积物收支。它能稳定地产生“像地球”的故事，但不能回答“为什么这块大陆一定在这里”。</p></div>
+
+  <h2 id="assembly" class="anchor">04 · 构造场与地形装配</h2>
+
+  <p>构造场把“边界类型”变成空间场，供 GAN 条件与地形盖章使用。洋壳深度不直接解热传导，而是用年龄排名映射到地球开阔洋深度分位：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 8 · ocean age-depth mapping</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mi>k</mi></msub><mo>=</mo><mfrac><mrow><mi>rank</mi><mo>(</mo><msub><mi>A</mi><mi>i</mi></msub><mo>)</mo></mrow><mrow><mi>N</mi><mo>−</mo><mn>1</mn></mrow></mfrac><mo>,</mo><mspace width="0.5em"/><msub><mi>z</mi><mrow><mi>o</mi><mi>c</mi></mrow></msub><mo>=</mo><mi>interp</mi><mo>(</mo><msub><mi>r</mi><mi>k</mi></msub><mo>,</mo><mi>Q</mi><mo>,</mo><mi>V</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">r_k=\frac{\mathrm{rank}(A_i)}{N-1},\quad z_{oc}=\mathrm{interp}(r_k,Q,V)</annotation></semantics></math>
+    <div class="eq-note">Q/V 是地球开阔洋年龄—深度分位表；这是“统计替代物理”的典型：保留了年龄越老越深的单调性，但不是在解岩石圈冷却/沉降。</div>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 9 · trench / arc / hotspot (schematic)</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mi>tr</mi></msub><mo>≈</mo><mo>−</mo><mo>(</mo><mn>6800</mn><mo>+</mo><mn>900</mn><mo>⋅</mo><mi>spd</mi><mo>)</mo><mo>−</mo><mn>2800</mn><msup><mi>e</mi><mrow><mo>−</mo><msup><mrow><mo>(</mo><mi>d</mi><mo>/</mo><mn>1.0</mn><mo>)</mo></mrow><mn>2</mn></msup></mrow></msup><mo>,</mo><mspace width="0.5em"/><msub><mi>z</mi><mi>hot</mi></msub><mo>≈</mo><mn>7200</mn><mi>tanh</mi><mo>(</mo><mn>2.8</mn><mi>v</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">z_{tr}\approx-(6800+900\,\mathrm{spd})-2800e^{-(d/1.0)^2},\quad z_{hot}\approx 7200\tanh(2.8v)</annotation></semantics></math>
+    <div class="eq-note">海沟/弧/热点都是“盖章式”形态：位置由构造场/记忆场决定，深度/高度由地球经验值决定；不是俯冲板片的热-力学解。</div>
+  </div>
+
+  <div class="callout"><p><strong>结论：</strong>地形装配层是“物理启发 + 地球统计校准”。它比纯噪声强得多，但它的可信度来自“结果像地球”，不是“过程可外推”。</p></div>
+
+  <h2 id="gan" class="anchor">05 · GAN 细节生成</h2>
+
+  <p>GAN 把粗骨架变成像素级地形。它是条件生成，不是物理求解：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 10 · conditional terrain generation</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>G</mi><mo>(</mo><mi>z</mi><mo>|</mo><mi>c</mi><mo>)</mo><mo>→</mo><msup><mi>x</mi><mo>′</mo></msup><mo>,</mo><mspace width="0.5em"/><mi>c</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mn>12</mn><mo>×</mo><mi>H</mi><mo>×</mo><mi>W</mi></mrow></msup></mrow><annotation encoding="application/x-tex">G(z\mid c)\rightarrow x',\quad c\in\mathbb{R}^{12\times H\times W}</annotation></semantics></math>
+    <div class="eq-note">12 通道：块均值/标准差/最小/最大、陆占比、河网、冰川、纬度、四类构造场。输入 <i>z</i> 是噪声；网络是 UNet base=32。</div>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 11 · tiling geometry</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>tile</mi><mo>=</mo><mn>256</mn><mo>,</mo><mspace width="0.4em"/><mi>stride</mi><mo>=</mo><mn>208</mn><mo>,</mo><mspace width="0.4em"/><mi>overlap</mi><mo>=</mo><mn>48</mn><mo>,</mo><mspace width="0.4em"/><msub><mi>N</mi><mn>2048</mn></msub><mo>=</mo><msup><mn>10</mn><mn>2</mn></msup><mo>,</mo><mspace width="0.4em"/><msub><mi>N</mi><mn>4096</mn></msub><mo>=</mo><msup><mn>20</mn><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\mathrm{tile}=256,\ \mathrm{stride}=208,\ \mathrm{overlap}=48,\ N_{2048}=10^2,\ N_{4096}=20^2</annotation></semantics></math>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 12 · global CDF matching</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><msubsup><mi>F</mi><mi>ref</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><mo>(</mo><msub><mi>F</mi><mi>raw</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>)</mo></mrow><annotation encoding="application/x-tex">x'=F_{\mathrm{ref}}^{-1}\big(F_{\mathrm{raw}}(x)\big)</annotation></semantics></math>
+    <div class="eq-note">blend≈0.60；峰值截断 8200m；深海块钳制；之后再 <code>despeckle(min_area=150)</code> 与接缝平滑。CDF 保证“像地球的分布”，也带来 Earth 偏置。</div>
+  </div>
+
+  <details><summary>Python 源码 · generate_world.py / 逐瓦片 GAN</summary><pre><code>rows = list(range(0, W, step))
+for by in rows:
+    for bx in rows:
+        ch = ch_raw[:, by:by1, bx:bx1] + rng.normal(...)
+        ch = (ch - mu) / sd
+        inp = np.repeat(np.repeat(ch, block, 1), block, 2)
+        out = gen(torch.from_numpy(inp).to(device))[0, 0].cpu().numpy()
+        canvas[by:by1, bx:bx1] += out * win
+        wgt[by:by1, bx:bx1] += win
+out = canvas / np.maximum(wgt, 1e-8)</code></pre></details>
+
+  <h2 id="climate" class="anchor">06 · 气候：温度、降水、群系</h2>
+
+  <p>气候是诊断式：先给纬向基座，再用大陆度、海拔、海岸/洋流、雨影修正。它不是能量平衡模型。</p>
+
+  <h3>6.1 温度</h3>
+
+  <p>代码的真实温度式（v8.0 拟合）是：</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 13 · annual temperature</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>29</mn><mo>−</mo><mo>(</mo><mn>0.05</mn><mo>|</mo><mi>φ</mi><mo>|</mo><mo>+</mo><mn>0.006</mn><msup><mi>φ</mi><mn>2</mn></msup><mo>)</mo><mo>−</mo><mn>6.5</mn><mfrac><mi>z</mi><mn>1000</mn></mfrac><mo>+</mo><mi>Δ</mi><msub><mi>T</mi><mi>CI</mi></msub><mo>+</mo><mi>Δ</mi><msub><mi>T</mi><mi>sub</mi></msub><mo>−</mo><msub><mi>ice</mi><mi>cool</mi></msub></mrow><annotation encoding="application/x-tex">T=29-(0.05|\varphi|+0.006\varphi^2)-6.5\frac{z}{1000}+\Delta T_{CI}+\Delta T_{sub}-\mathrm{ice}_{cool}</annotation></semantics></math>
+    <div class="eq-note">注意：上一版文档里的 <i>27−0.42|φ|−…</i> 是旧口径；代码用 <i>29−0.05a−0.006a²</i>，并额外减 <i>ice_cool</i>（最高 60°C）。这是“注释/文档落后于实现”的典型。</div>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 14 · continentality index</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><mi>I</mi><mo>=</mo><mrow><mo>(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>d</mi><mi>sea</mi></msub><mo>/</mo><mn>1800</mn></mrow></msup><mo>)</mo></mrow><mrow><mo>(</mo><mn>0.55</mn><mo>+</mo><mn>0.45</mn><mi>clip</mi><mrow><mo>(</mo><mfrac><mrow><mo>|</mo><mi>φ</mi><mo>|</mo><mo>−</mo><mn>15</mn></mrow><mn>75</mn></mfrac><mo>,</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>)</mo></mrow><mo>)</mo></mrow></mrow><annotation encoding="application/x-tex">CI=(1-e^{-d_{sea}/1800})(0.55+0.45\,\mathrm{clip}((|\varphi|-15)/75,0,1))</annotation></semantics></math>
+  </div>
+
+  <h3>6.2 降水</h3>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 15 · precipitation (schematic)</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo>=</mo><msub><mi>P</mi><mi>lat</mi></msub><mo>(</mo><mi>φ</mi><mo>)</mo><mo>⋅</mo><mi>O</mi><mo>(</mo><mi>wind</mi><mo>,</mo><mi>∇</mi><mi>z</mi><mo>)</mo><mo>⋅</mo><mo>(</mo><mn>1</mn><mo>−</mo><mn>0.55</mn><mi>C</mi><mi>I</mi><mo>)</mo><mo>⋅</mo><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>d</mi><mi>inland</mi></msub><mo>/</mo><mi>L</mi></mrow></msup><mo>⋅</mo><mi>C</mi></mrow><annotation encoding="application/x-tex">P=P_{lat}(\varphi)\cdot O(\mathrm{wind},\nabla z)\cdot(1-0.55CI)\cdot e^{-d_{inland}/L}\cdot C</annotation></semantics></math>
+    <div class="eq-note">P_lat 是 ITCZ/副热带/温带/极地的纬向基座；O 是迎风坡增雨/背风雨影/水汽路径衰减；C 包含海岸暖流/寒流/季风异常。它是经验参数化，不满足水汽守恒。</div>
+  </div>
+
+  <h3>6.3 群系与雪线</h3>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 16 · Whittaker / snowline</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mo>=</mo><mi>W</mi><mo>(</mo><mi>T</mi><mo>,</mo><mi>P</mi><mo>,</mo><mi>C</mi><mi>I</mi><mo>)</mo><mo>,</mo><mspace width="0.5em"/><msub><mi>z</mi><mi>snow</mi></msub><mo>=</mo><mi>interp</mi><mo>(</mo><mo>|</mo><mi>φ</mi><mo>|</mo><mo>,</mo><msub><mi>L</mi><mi>lat</mi></msub><mo>,</mo><msub><mi>M</mi><mi>lat</mi></msub><mo>)</mo><mo>+</mo><mn>800</mn><mo>(</mo><mn>1</mn><mo>−</mo><mi>P</mi><mo>/</mo><mn>700</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">B=W(T,P,CI),\quad z_{snow}=\mathrm{interp}(|\varphi|,L_{lat},M_{lat})+800(1-P/700)</annotation></semantics></math>
+    <div class="eq-note">W 是 9 类 Whittaker 查表。代码 <code>_SL_M</code> 实际约 3120–3770m；docstring 仍写 4800/5800，需以代码表为准。</div>
+  </div>
+
+  <details><summary>Python 源码 · temperature_field / 核心温度式</summary><pre><code>lat_gradient = 0.05 * a + 0.006 * a ** 2
+cold_term = np.clip((a - 30.0) / 60.0, 0.0, 1.0) * 8.0
+warm_term = np.clip(1.0 - np.abs(a - 24.0) / 14.0, 0.0, 1.0) * 1.5
+polar_w = np.clip((a - 58.0) / 20.0, 0.0, 1.0)
+cold_term_eff = cold_term * (1.0 - 0.60 * polar_w)
+dT_ci = ci64 * (warm_term - cold_term_eff)
+ice_cool = np.clip((a - 48.0) / 42.0, 0.0, 1.0) * 60.0
+T = 29.0 - lat_gradient - 6.5 * elev_climate / 1000.0 \
+    + dT_ci + dT_sub - ice_cool</code></pre></details>
+
+  <details><summary>Python 源码 · precipitation_field / 纬向基座与大陆度</summary><pre><code>base = np.interp(a, _P_LAT, _P_MM)[:, None] * np.ones((1, w))
+lat_penalty = np.where(subtrop_band, 1.05, lat_penalty)
+lat_penalty = np.where(westerly_band, 0.55, lat_penalty)
+lat_penalty = np.where(polar_band, 0.70, lat_penalty)
+lat_penalty = np.where(eq_ci_band, 0.50, lat_penalty)
+f_ci = 1.0 - (0.35 * ci64) * lat_penalty
+base *= f_ci</code></pre></details>
+
+  <h2 id="hydro" class="anchor">07 · 水文与侵蚀</h2>
+
+  <h3>7.1 D8 流向与汇流</h3>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 17 · D8 receiver</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>=</mo><munder><mo>argmax</mo><mi>j</mi></munder><mfrac><mrow><msub><mi>z</mi><mi>i</mi></msub><mo>−</mo><msub><mi>z</mi><mi>j</mi></msub></mrow><msub><mi>L</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mfrac><mo>,</mo><mspace width="0.4em"/><msub><mi>L</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>∈</mo><mo>{</mo><mn>1</mn><mo>,</mo><msqrt><mn>2</mn></msqrt><mo>}</mo></mrow><annotation encoding="application/x-tex">d(i)=\underset{j}{\operatorname{argmax}}\frac{z_i-z_j}{L_{ij}},\quad L_{ij}\in\{1,\sqrt{2}\}</annotation></semantics></math>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 18 · flow accumulation</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>A</mi><mi>i</mi></msub><mo>=</mo><msub><mi>s</mi><mi>i</mi></msub><mo>+</mo><munder><mo>∑</mo><mrow><mi>j</mi><mo>:</mo><mi>d</mi><mo>(</mo><mi>j</mi><mo>)</mo><mo>=</mo><mi>i</mi></mrow></munder><msub><mi>A</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">A_i=s_i+\sum_{j:\,d(j)=i}A_j</annotation></semantics></math>
+    <div class="eq-note">s_i=1（面积）或降水权重；Kahn 拓扑排序单遍 O(N)。河网阈值约 99.5% 分位，干流再按 5×阈值加宽。</div>
+  </div>
+
+  <h3>7.2 Hack 律与粒子侵蚀</h3>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 19 · Hack scaling</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>W</mi><mo>∝</mo><msup><mi>A</mi><mn>0.5</mn></msup><mo>,</mo><mspace width="0.5em"/><mi>S</mi><mo>∝</mo><msup><mi>A</mi><mrow><mo>−</mo><mi>θ</mi></mrow></msup><mo>,</mo><mspace width="0.5em"/><mi>θ</mi><mo>≈</mo><mn>0.4</mn><mo>−</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">W\propto A^{0.5},\quad S\propto A^{-\theta},\quad \theta\approx0.4-0.5</annotation></semantics></math>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 20 · particle erosion capacity</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mi>cap</mi></msub><mo>=</mo><mi>max</mi><mo>(</mo><mo>−</mo><mi>Δ</mi><mi>h</mi><mo>,</mo><msub><mi>s</mi><mi>min</mi></msub><mo>)</mo><mo>⋅</mo><mi>water</mi><mo>⋅</mo><mi>capacity</mi><mo>,</mo><mspace width="0.4em"/><mi>capacity</mi><mo>=</mo><mn>4.0</mn></mrow><annotation encoding="application/x-tex">C_{cap}=\max(-\Delta h,s_{min})\cdot water\cdot capacity,\quad capacity=4.0</annotation></semantics></math>
+    <div class="eq-note">侵蚀 0.45、沉积 0.30、蒸发 0.012；15 万水滴 × 40 步。它产生 V 形谷/冲积扇/三角洲，但没有全局泥沙质量预算。</div>
+  </div>
+
+  <details><summary>Python 源码 · d8_flow_accumulation / Kahn 单遍</summary><pre><code>e = (elev.astype(np.float32) + rng.uniform(0, 1e-4, (h, w))).ravel()
+acc = np.ones(h * w, dtype=np.float64)
+if _native is not None:
+    acc = _native.flow_acc_kahn(e, acc, h, w)
+else:
+    acc = _flow_acc_kahn_njit(e, acc, h, w)
+return acc.reshape(h, w)</code></pre></details>
+
+  <details><summary>Python 源码 · droplet_erosion / 侵蚀—沉积</summary><pre><code>cap = np.maximum(-dh, min_slope) * water * capacity
+rich = (dh &gt; 0) | (sed &gt; cap)
+dep = np.where(rich, np.where(dh &gt; 0, np.minimum(sed, dh),
+                              np.maximum(sed - cap, 0.0) * deposit), 0.0)
+ero = np.where(~rich, np.minimum((cap - sed) * erode,
+                                 np.maximum(-dh, 0.0)), 0.0)
+h = h + (dep - ero)  # 以双线性权重写回四个格点
+sed = np.where(rich, sed - dep, sed + ero)</code></pre></details>
+
+  <h2 id="render" class="anchor">08 · 渲染与 3D</h2>
+
+  <p>渲染是“卫星图风格”的经验合成：群系色 × 山影 × 海深/雪/冰；不是 PBR。</p>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 21 · hillshade and biome color</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>h</mi><mi>s</mi></msub><mo>=</mo><mi>clip</mi><mo>(</mo><mn>0.88</mn><mo>−</mo><mn>22</mn><mo>(</mo><msub><mi>g</mi><mi>x</mi></msub><mo>+</mo><msub><mi>g</mi><mi>y</mi></msub><mo>)</mo><mo>,</mo><mn>0.60</mn><mo>,</mo><mn>1.15</mn><mo>)</mo><mo>,</mo><mspace width="0.5em"/><mi>shade</mi><mo>=</mo><mo>(</mo><mn>0.78</mn><mo>+</mo><mn>0.55</mn><msub><mi>z</mi><mi>n</mi></msub><mo>)</mo><mo>(</mo><mn>0.72</mn><mo>+</mo><mn>0.28</mn><msub><mi>h</mi><mi>s</mi></msub><mo>)</mo></mrow><annotation encoding="application/x-tex">h_s=\mathrm{clip}(0.88-22(g_x+g_y),0.60,1.15),\quad shade=(0.78+0.55z_n)(0.72+0.28h_s)</annotation></semantics></math>
+    <div class="eq-note">NW 单方向光照；群系边界仅 3px 软混合；低地 shade 有 0.86 保底。它是“好看”的关键，也是“塑料感/平”的来源之一。</div>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Eq. 22 · mesh normal</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mi>normalize</mi><mo>(</mo><mo>−</mo><mfrac><mrow><mo>∂</mo><mi>z</mi></mrow><mrow><mo>∂</mo><mi>x</mi></mrow></mfrac><mo>,</mo><mo>−</mo><mfrac><mrow><mo>∂</mo><mi>z</mi></mrow><mrow><mo>∂</mo><mi>y</mi></mrow></mfrac><mo>,</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">n_{ij}=\mathrm{normalize}\left(-\frac{\partial z}{\partial x},-\frac{\partial z}{\partial y},1\right)</annotation></semantics></math>
+    <div class="eq-note">当前 3D 是 DEM → 平面/球体网格 → OBJ/glTF；2048² 全网格约 800 万三角形，没有 LOD/流式/PBR。高精度应靠法线/纹理/LOD，不是无限加面。</div>
+  </div>
+
+  <h2 id="audit" class="anchor">09 · 模型审计：物理 vs 规则</h2>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>层</th><th>数学类型</th><th>守恒/约束</th><th>主要假设</th><th>可信度</th></tr></thead>
+      <tbody>
+        <tr><td>板块</td><td>刚体旋转 + 阶段速度场</td><td>欧拉运动；陆地守恒为规则</td><td>速度由阶段目标驱动；无地幔对流/挠曲/动态海平面</td><td>中—高（叙事）</td></tr>
+        <tr><td>地形装配</td><td>分位映射 + 规则盖章</td><td>形态统计</td><td>地球标定；非力学解</td><td>中</td></tr>
+        <tr><td>GAN</td><td>条件生成</td><td>无显式物理约束</td><td>ETOPO1 分布；瓦片独立</td><td>高（纹理）/低（物理）</td></tr>
+        <tr><td>气候</td><td>诊断式经验模型</td><td>无能量/水汽守恒</td><td>纬向基座 + 修正</td><td>中</td></tr>
+        <tr><td>水文/侵蚀</td><td>D8 + 粒子过程</td><td>局部流路；无全局泥沙预算</td><td>D8 单流向；参数化侵蚀</td><td>中—高（形态）</td></tr>
+        <tr><td>时间</td><td>单终态</td><td>—</td><td>450 Myr 过程不输出</td><td>低（产品价值被埋没）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>9.1 文档/实现不一致（重要）</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>项</th><th>文档/注释</th><th>代码/产物</th><th>影响</th></tr></thead>
+      <tbody>
+        <tr><td>温度公式</td><td>旧版 <i>27−0.42|φ|−…</i></td><td>代码 <i>29−0.05a−0.006a²−ice_cool</i></td><td>按文档调参会偏暖；极地实际更冷</td></tr>
+        <tr><td>雪线</td><td>docstring 4800/5800m</td><td><code>_SL_M</code> 约 3120–3770m</td><td>雪盖/冰盖面积判断偏差</td></tr>
+        <tr><td>去斑</td><td>TECHNICAL 表写 &lt;32px</td><td><code>despeckle(min_area=150)</code></td><td>小岛/湖被更强清理</td></tr>
+        <tr><td>时间</td><td>README 2048 首次 2–4 分钟</td><td>TECHNICAL 4096 全流程 140s</td><td>不是同一 benchmark 口径</td></tr>
+        <tr><td>原生扩展</td><td>README 说 <code>.so</code> 已内置</td><td>公开 clone 无 <code>.so</code>，回退 Numba</td><td>首次运行更慢；结果应逐位一致</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout crit"><p><strong>审计结论：</strong>这不是“代码写得差”，而是“研究型代码的文档债”。做任何调参/复现前，先以代码和输出为准，不要以 docstring/README 的数字为准。</p></div>
+
+  <h2 id="gaps" class="anchor">10 · 结构性不足与优化路线</h2>
+
+  <h3>10.1 五个结构性不足</h3>
+
+  <ol>
+    <li><strong>时间被浪费：</strong>450 Myr/720 步只输出终态；没有时间切片、古地理、古气候，时间线/纪元无法绑定。</li>
+    <li><strong>质量/能量不守恒：</strong>侵蚀有局部沉积但无全局泥沙预算；气候无能量/水汽闭合；海平面固定。</li>
+    <li><strong>没有岩石圈力学：</strong>无 flexural/Airy isostasy、动态海平面；高程多为规则装配。</li>
+    <li><strong>耦合是单向的：</strong>气候不改变侵蚀，侵蚀不改变均衡，海洋不反馈气候。</li>
+    <li><strong>Earth 偏置：</strong>GAN/CDF/直方图把世界拉回地球；非地球范式多样性不足。</li>
+  </ol>
+
+  <h3>10.2 优先级</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>优先级</th><th>改动</th><th>具体实现</th><th>收益</th><th>成本</th></tr></thead>
+      <tbody>
+        <tr><td>P0</td><td>时间切片 / 4D</td><td>每 10–25 Myr 保存 <code>time, elev, crust, sea_level, climate, biome</code>；至少 0/150/260/450 Myr 四帧；地图加时间滑杆，时间线事件引用 <code>time_myr</code></td><td>把已有 450 Myr 变成可见资产；Matrees 难以复制的差异化</td><td>低—中</td></tr>
+        <tr><td>P0</td><td>质量守恒的侵蚀—沉积 + 动态海平面</td><td>Exner 方程/泥沙收支；侵蚀 = 沉积 + 输出；冰盖/海洋体积改变海平面；河流基准面随海平面</td><td>修复三角洲/海岸/盆地“看起来对但不可追问”</td><td>中</td></tr>
+        <tr><td>P1</td><td>flexural/Airy isostasy + 参数化板块力</td><td>山脉山根/盆地补偿；slab pull/ridge push 调制速度；阶段目标改软约束</td><td>大尺度地形更自然；超大陆旋回更多样</td><td>中—高</td></tr>
+        <tr><td>P1</td><td>季节化 + 中间复杂度气候</td><td>12 月/4 季太阳辐射；1D EBM + 水汽输送 + 海洋混合层；ITCZ 迁移</td><td>季风/雨影/雪线/群系边界更可信</td><td>高</td></tr>
+        <tr><td>P1</td><td>GAN 物理约束 + 瓦片一致</td><td>slope/flow/normal/coast 一致性损失；overlap loss；局部边界条件；风格条件</td><td>局部地图更“无痕”；减少接缝/幻觉</td><td>中—高</td></tr>
+        <tr><td>P2</td><td>动态植被/土壤/农业</td><td>土壤水分/植被竞争/农业适宜性；先做规则/评分，不做全动态</td><td>生态语义与故事性</td><td>中</td></tr>
+        <tr><td>P2</td><td>全地幔对流/全 GCM</td><td>球面 2D/3D 对流、完整辐射/动力核心</td><td>科学深度/论文价值</td><td>很高；视觉回报低</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>10.3 新数据模型</h3>
+
+  <pre><code>EvolutionState:
+  time_myr: float
+  elevation: (H,W) float32
+  crust: (H,W) int8
+  plates: (H,W) int16
+  orog: (H,W) float32
+  sediment: (H,W) float32      # 新增：质量预算
+  sea_level: float             # 新增：动态海平面
+  climate: {T, P, biome, snow}
+  provenance: {model_version, seed, stage}
+
+TerrainSource:
+  seed, resolution, time_slices[]
+  dem_hash, climate_hash, feature_hash
+
+RenderRequest:
+  source_id, region, projection, size, style, layers
+  # 同一 source 渲染局部/全球/3D，不再重跑模拟</code></pre>
+
+  <h3>10.4 四条关键公式：从“建议”变成“可实现的方程”</h3>
+
+  <p>优化不能停在“加时间切片/加守恒”的口号。下面四条是把方案落到代码的核心方程；它们不需要一次全上，但必须逐条对应到 <code>EvolutionState</code> 的字段与验收指标。</p>
+
+  <div class="equation">
+    <div class="eq-label">Opt. 1 · Exner / sediment mass balance</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mo>∂</mo><mi>η</mi></mrow><mrow><mo>∂</mo><mi>t</mi></mrow></mfrac><mo>=</mo><mi>U</mi><mo>−</mo><mi>∇</mi><mo>⋅</mo><msub><mi>q</mi><mi>s</mi></msub><mo>,</mo><mspace width="0.6em"/><msub><mi>q</mi><mi>s</mi></msub><mo>=</mo><mi>K</mi><msup><mi>Q</mi><mi>m</mi></msup><msup><mi>S</mi><mi>n</mi></msup></mrow><annotation encoding="application/x-tex">rac{\partial \eta}{\partial t}=U-
+abla\cdot q_s,\quad q_s=KQ^mS^n</annotation></semantics></math>
+    <div class="eq-note">η 为地表高程，U 为构造抬升，q_s 为泥沙通量，Q 为流量，S 为坡度。当前 <code>droplet_erosion</code> 有局部侵蚀/沉积，但没有把“侵蚀量 = 沉积量 + 输出量”作为全局约束；Exner 是补这个缺口的首选。</div>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Opt. 2 · flexural isostasy</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi><msup><mi>∇</mi><mn>4</mn></msup><mi>w</mi><mo>+</mo><msub><mi>ρ</mi><mi>m</mi></msub><mi>g</mi><mi>w</mi><mo>=</mo><mi>q</mi><mo>,</mo><mspace width="0.6em"/><mi>D</mi><mo>=</mo><mfrac><mrow><mi>E</mi><msubsup><mi>T</mi><mi>e</mi><mn>3</mn></msubsup></mrow><mrow><mn>12</mn><mo>(</mo><mn>1</mn><mo>−</mo><msup><mi>ν</mi><mn>2</mn></msup><mo>)</mo></mrow></mfrac></mrow><annotation encoding="application/x-tex">D
+abla^4w+
+ho_mgw=q,\quad D=rac{ET_e^3}{12(1-
+u^2)}</annotation></semantics></math>
+    <div class="eq-note">w 为竖向挠曲，q 为构造/沉积载荷，D 为抗弯刚度。当前没有显式 flexure/Airy 补偿；先做“山根/盆地补偿”的轻量版，再考虑完整板挠曲。</div>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Opt. 3 · seasonal energy balance</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><mfrac><mrow><mo>∂</mo><mi>T</mi></mrow><mrow><mo>∂</mo><mi>t</mi></mrow></mfrac><mo>=</mo><mi>S</mi><mo>(</mo><mn>1</mn><mo>−</mo><mi>α</mi><mo>)</mo><mo>−</mo><mo>(</mo><mi>A</mi><mo>+</mo><mi>B</mi><mi>T</mi><mo>)</mo><mo>+</mo><mi>D</mi><msup><mi>∇</mi><mn>2</mn></msup><mi>T</mi></mrow><annotation encoding="application/x-tex">Crac{\partial T}{\partial t}=S(1-lpha)-(A+BT)+D
+abla^2T</annotation></semantics></math>
+    <div class="eq-note">S 为太阳辐射，α 为反照率，A+BT 为长波冷却，D∇²T 为热扩散/输运。不需要全 GCM；1D EBM + 水汽输送 + 海洋混合层就能补上季节/雨影/雪线的主要缺口。</div>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Opt. 4 · physics-constrained GAN loss</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi><mo>=</mo><msub><mi>L</mi><mi>adv</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>rec</mi></msub><msub><mi>L</mi><mi>rec</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>s</mi></msub><msub><mi>L</mi><mi>slope</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>f</mi></msub><msub><mi>L</mi><mi>flow</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub><msub><mi>L</mi><mi>tile</mi></msub></mrow><annotation encoding="application/x-tex">L=L_{adv}+\lambda_{rec}L_{rec}+\lambda_sL_{slope}+\lambda_fL_{flow}+\lambda_tL_{tile}</annotation></semantics></math>
+    <div class="eq-note">L_slope 约束坡向/坡度，L_flow 约束河网/汇流，L_tile 约束重叠区一致；先小权重加，避免把 GAN 的纹理能力压死。风格条件可另加 <code>style embedding</code>。</div>
+  </div>
+
+  <h3>10.5 12–16 周实施路线（单人估算）</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>阶段</th><th>周</th><th>交付</th><th>验收</th><th>风险</th></tr></thead>
+      <tbody>
+        <tr><td>P0.1 时间切片</td><td>2–3</td><td><code>EvolutionState</code> + 4 帧快照 + 压缩格式；CLI 输出 <code>time_*.npz</code></td><td>0/150/260/450 Myr 可复现；切片间海岸/河流连续</td><td>存储膨胀；用 int16/压缩/分块</td></tr>
+        <tr><td>P0.2 质量守恒</td><td>3–4</td><td>Exner 泥沙收支 + 动态海平面最小版；河/三角洲/海岸重算</td><td>泥沙预算误差 &lt;1%；海平面变化可解释</td><td>改变地貌分布；需重调风格</td></tr>
+        <tr><td>P1.1 岩石圈力学</td><td>4–6</td><td>Airy/flexure 轻量版；山根/盆地补偿；slab pull/ridge push 参数化</td><td>山—盆地壳厚度/高程关系更合理；不崩坏现有大陆</td><td>计算成本；先离线/低分辨率</td></tr>
+        <tr><td>P1.2 季节气候</td><td>4–6</td><td>12 月/4 季 EBM + 水汽输送 + 海洋混合层</td><td>季风/雨影/雪线季节振幅合理；无能量漂移</td><td>参数多；先用代理/查找表</td></tr>
+        <tr><td>P1.3 GAN 物理约束</td><td>4–6</td><td>slope/flow/normal/tile loss；局部边界条件；风格条件</td><td>100% 缩放接缝下降；河网/海岸不被破坏</td><td>过度约束会让纹理变平</td></tr>
+        <tr><td>P2 生态/全 GCM</td><td>6–8+</td><td>动态植被/土壤/农业；可选全地幔/GCM</td><td>生态语义与科学深度</td><td>成本高、视觉回报低，后置</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>10.6 验收指标与部署边界</h3>
+
+  <div class="grid2">
+    <div class="box"><h4>科学/模型验收</h4><ul class="tight"><li>质量：泥沙收支闭合；海平面/冰量一致；</li><li>能量：EBM 全球平均温度稳定，无年际漂移；</li><li>形态：hypsometry、Hack 指数、Strahler 级序、海岸分形维数；</li><li>时间：切片间海岸/河流/群集连续，无“跳变”。</li></ul></div>
+    <div class="box"><h4>工程/产品验收</h4><ul class="tight"><li>时间切片：4 帧 &lt; 数百 MB；加载 &lt;1s/帧；</li><li>局部瓦片：2048 缓存 &lt;300ms；未命中 worker &lt;30s；</li><li>2C2G：只做 manifest/静态/标记，应用 RSS &lt;512MB（不含 OS/page cache）；</li><li>3D：LOD 无裂缝；1080p 60fps；tile &lt;100ms。</li></ul></div>
+  </div>
+
+  <p class="evidence">部署边界沿用上一份优化方案：模拟/生成在本地、CI 或独立 worker（2048 建议 8–16GB；4096 建议 32GB）；2C2G 腾讯云只做 Opuscule Web/媒体/任务状态，不跑 torch/GAN。</p>
+
+  <div class="quote">你的引擎已经能生成“像世界”的地形；下一步不是再加噪声，而是让世界<strong>有时间、有守恒、有反馈</strong>。<small>外观是入口，演化才是护城河。</small></div>
+
+  <h2 id="compare" class="anchor">11 · 与 Matrees / VVD 的定位对比</h2>
+
+  <p>把三者放在同一张表里，最重要的不是“谁功能多”，而是<strong>它们解决的是不同层的问题</strong>：Terrain 解决“世界怎么长出来”，Matrees 解决“地图怎么被作者做出来/读出来”，VVD 解决“世界知识怎么被协作记录/组织”。把 Terrain 直接拿去比 Matrees 的成品地图，会低估它的模拟深度；把 Matrees 拿去比 Terrain 的地形物理，会高估它的生成能力。</p>
+
+  <p class="evidence">下表 Terrain v12 指<strong>引擎本体</strong>；Pro/Lite/Web 是第 12–14 节新增的产品层，其中 Web 目标在线 8–10 秒生成标准 2048 局部 2D。</p>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>维度</th><th>Terrain v12</th><th>Matrees</th><th>VVD</th></tr></thead>
+      <tbody>
+        <tr><td>核心角色</td><td>世界模拟引擎 + Pro/Lite/Web 产品层</td><td>地图作者工具 + 地图阅读产品</td><td>世界 Wiki / 知识库 + 协作文档</td></tr>
+        <tr><td>地形生成</td><td>450 Myr 板块 + GAN + 气候/水文；物理骨架强</td><td>2048² 地图画布/heightmap；更偏地图产品与作者控制（含 image/PSD/vector 底图）</td><td>不生成地形；经典地图是图片 + SVG zones/pins/layers</td></tr>
+        <tr><td>地图范围</td><td>全球 2048²/4096² 栅格；一像素约 19.6km（2048）</td><td>2048² 地图画布，范围由地图决定；可局部/区域</td><td>以单张地图/图像为画布；范围由上传图决定</td></tr>
+        <tr><td>语义层</td><td><span class="badge b-crit">弱</span> 只有 RGB；无区域/城市/道路/标签</td><td><span class="badge b-good">强</span> 区域/城市/标签/图层/要素；提案/审核链</td><td><span class="badge b-good">强</span> zones/pins/layers + 卡片/文档链接</td></tr>
+        <tr><td>时间/演化</td><td><span class="badge b-warn">埋没</span> 内部 450 Myr，只输出终态</td><td>多历法事件/日历；地图是当前态</td><td>单时间线、线性/循环纪元、Ages/Events；与地图/卡片关联</td></tr>
+        <tr><td>交互</td><td><span class="badge b-crit">弱</span> PNG/HTML 报告/3D 文件；无地图编辑器</td><td><span class="badge b-good">强</span> Leaflet + WebGL2 + 2D overlay；flat/globe；缩放/图层/要素</td><td><span class="badge b-good">强</span> 文档/卡片/时间线/地图图层；协作编辑</td></tr>
+        <tr><td>协作/发布</td><td><span class="badge b-crit">弱</span> CLI/本地文件；无多用户</td><td><span class="badge b-warn">中</span> 作者/审核/提案；偏地图产品</td><td><span class="badge b-good">强</span> Supabase/Realtime + Yjs；Wiki/卡片/文档</td></tr>
+        <tr><td>3D</td><td><span class="badge b-good">强</span> OBJ/glTF，平面/球体；但无 LOD/流式</td><td><span class="badge b-warn">中</span> 有 globe/WebGL 视图，但不是高精度地形资产</td><td><span class="badge b-crit">弱</span> 以 2D 地图/知识为主</td></tr>
+        <tr><td>视觉风格</td><td>卫星/地形 atlas；依赖 9 群系色 + 山影</td><td>作者策展/插画/地图产品感；局部画布 + 图层 + 标签</td><td>信息图/示意图风格；地图是知识载体</td></tr>
+        <tr><td>技术栈</td><td>Python + NumPy/SciPy/Numba/Torch；C++ native；离线</td><td>Vue 3 + Pinia + Ant Design Vue Next；Leaflet/WebGL2；内容寻址地图 blob</td><td>Next.js App Router + Supabase + Yjs；Postgres/Auth/Realtime</td></tr>
+        <tr><td>最强项</td><td>物理自洽、450 Myr、GAN 纹理、3D 导出、可复现</td><td>局部地图产品、要素/标注、地图阅读体验</td><td>世界知识组织、时间线、协作文档</td></tr>
+        <tr><td>最弱项</td><td>没有地图产品层/语义层/交互层；全球栅格</td><td>没有 450 Myr 物理演化；生成深度有限</td><td>没有地形生成/物理一致性；地图偏示意</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>11.1 三者其实是三种“世界”</h3>
+
+  <div class="grid2">
+    <div class="box"><h4>Terrain = 世界模拟器</h4><p>回答“大陆为什么在这里、山脉怎么长、河流怎么走、气候怎么分带”。它的价值是<strong>因果链与可复现</strong>，不是“点开就能编辑一张漂亮地图”。</p></div>
+    <div class="box"><h4>Matrees = 地图产品</h4><p>回答“作者怎么把世界画成一张可读的地图”。它的价值是<strong>局部画布 + 要素/标注 + 图层/交互 + 策展</strong>；最好的图往往有人类美术/PSD 参与。</p></div>
+    <div class="box"><h4>VVD = 世界 Wiki</h4><p>回答“世界知识怎么被组织、链接、协作、按时间阅读”。它的价值是<strong>卡片/文档/时间线/多人协作</strong>；地图是知识的视图，不是地形模拟。</p></div>
+    <div class="box"><h4>Opuscule 的启示</h4><p>你的地图模块目前更像“Matrees 的极简版 + VVD 的世界容器”；如果接入 Terrain，应该把 Terrain 当<strong>底图/时间切片供应商</strong>，而不是把整个模拟器塞进 Django 请求。</p></div>
+  </div>
+
+  <h3>11.2 该借什么，不该抄什么</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>对象</th><th>值得借</th><th>不要抄</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>Matrees</td><td>局部 2048 画布；区域/城市/标签/图层；flat/globe；image/PSD/vector 底图；提案/审核</td><td>完整地图编辑器/美术生产管线</td><td>这些是产品层；Terrain 应做引擎/瓦片供应商，避免变成另一个 Matrees</td></tr>
+        <tr><td>VVD</td><td>时间线（线性/循环纪元、Ages/Events）；卡片/文档/backlink；Realtime/Yjs 协作</td><td>完整 Wiki/文档编辑器/实时协同基础设施</td><td>这些是知识层；Terrain 只要输出时间切片/地理元数据，让上层去组织</td></tr>
+        <tr><td>两者共同</td><td>“地图是入口，内容/时间/协作文档是留存”</td><td>把地图当一次性 PNG</td><td>地图必须可点、可标注、可随时间变化，才有产品黏性</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>11.3 Terrain 的差异化定位</h3>
+
+  <p><strong>不要做“更好的 Matrees”或“更地理的 VVD”。</strong>更合理的定位是：<strong>“可复现的 4D 世界引擎”</strong>——上层可以是 Matrees 式地图产品，也可以是 VVD 式 Wiki；Terrain 提供：</p>
+
+  <ul>
+    <li><strong>一致的全球/局部地形</strong>：同一 seed，全球总览与局部 2048 不矛盾；</li>
+    <li><strong>时间切片</strong>：0/150/260/450 Myr，纪元/事件可以绑定古地理；</li>
+    <li><strong>可导出 3D</strong>：OBJ/glTF/3D Tiles，给 globe/桌面/游戏引擎；</li>
+    <li><strong>可复现的物理参数</strong>：seed/模型版本/参数写进 provenance，不依赖某张手工图。</li>
+  </ul>
+
+  <p>这会形成一种“引擎—产品”分工：Matrees 擅长让作者<strong>做</strong>一张图，VVD 擅长让团队<strong>记</strong>一个世界，Terrain 擅长让世界<strong>长</strong>出来并在时间上<strong>一致</strong>。三者不是替代关系，而是上下游关系。</p>
+
+  <h3>11.4 如果要把 Terrain 接进产品，优先顺序</h3>
+
+  <ol>
+    <li><strong>先做 4D 切片 + 局部瓦片</strong>：没有这两样，Terrain 只是“离线 PNG 生成器”；有了它们，才是地图/时间线/3D 的共用底图。</li>
+    <li><strong>再做矢量语义层</strong>：区域/城市/道路/标签；这是 Matrees 的核心优势，也是 Terrain 最缺的产品层。</li>
+    <li><strong>再接时间线/Wiki</strong>：把 <code>time_myr</code> 暴露给 VVD 式时间线/Ages/Events；不要自己重做 Wiki。</li>
+    <li><strong>最后做地图编辑器/协作</strong>：这是产品团队的工作，不是模拟引擎的核心；可以复用 Matrees/VVD 的模式，而不是从零写。</li>
+  </ol>
+
+  <div class="callout"><p><strong>一句话对比：</strong>Matrees 让地图<strong>好看、可读、可编辑</strong>；VVD 让世界<strong>可写、可链、可协作</strong>；Terrain 让世界<strong>可演化、可复现、可切片</strong>。三者合起来才是完整产品，单独比较“谁更强”会问错问题。</p></div>
+
+  <h2 id="pro" class="anchor">12 · Terrain Pro：真实度上限</h2>
+
+  <p>Pro 的定位不是“更快的 Lite”，而是<strong>尽可能真实、尽可能强大</strong>：它可以跑完整 450 Myr、4096/8192、全量 GAN、3D LOD/PBR、批量 seed、离线研究级模型。它不服务 2C2G，也不服务手机；它服务“愿意为一张世界地图等待几分钟到几小时”的专业用户。</p>
+
+  <h3>12.1 真实度阶梯：Pro 不是一个固定档位</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>档位</th><th>模型/渲染</th><th>目标</th><th>时间预算</th></tr></thead>
+      <tbody>
+        <tr><td>Draft</td><td>现有 v12 骨架 + 简化 GAN/气候/水文；2048 全球；低 LOD 3D</td><td>快速看大陆/山脉/气候</td><td>1–3 分钟</td></tr>
+        <tr><td>Standard</td><td>v12 + 时间切片 + 局部 2048 + 9 群系 + 河湖 + 2K 3D</td><td>可发布的世界地图</td><td>3–10 分钟</td></tr>
+        <tr><td>Ultra</td><td>质量守恒侵蚀/沉积 + flexure + 季节气候 + 4096 + GAN 物理约束 + 3D LOD/PBR</td><td>接近研究级/印刷级</td><td>10–60 分钟</td></tr>
+        <tr><td>Research</td><td>更高分辨率、集合/敏感性、全地幔/全 GCM 可选、离线数小时</td><td>论文/展览/影视</td><td>小时—天</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>12.2 Pro 必须做的“真实与强大”</h3>
+
+  <div class="grid2">
+    <div class="box"><h4>模拟真实度</h4><ul class="tight"><li>时间切片 0/150/260/450 Myr；</li><li>Exner 泥沙收支 + 动态海平面；</li><li>flexure/Airy 均衡 + 参数化板块力；</li><li>季节化 EBM/水汽/海洋混合层；</li><li>GAN 物理约束与局部边界。</li></ul></div>
+    <div class="box"><h4>地图专业度</h4><ul class="tight"><li>局部 2048/4096，任意区域重投影；</li><li>全球 z0 8192×4096 + 瓦片金字塔；</li><li>区域/城市/道路/标签/图例；</li><li>atlas/parchment/political/topo 风格；</li><li>300 DPI 印刷/PDF。</li></ul></div>
+    <div class="box"><h4>3D 专业度</h4><ul class="tight"><li>4 级 LOD（512/1024/2048/4096）；</li><li>法线/PBR/纹理图集；</li><li>3D Tiles/glTF/OBJ；</li><li>平面/球体/globe；</li><li>Unity/Unreal/Blender/Cesium。</li></ul></div>
+    <div class="box"><h4>工作流</h4><ul class="tight"><li>批量 seed/参数扫描；</li><li>本地 Studio 编辑/预览；</li><li>Map Pack 导出/版本化；</li><li>provenance/可复现实验；</li><li>可选手绘/PSD 叠加。</li></ul></div>
+  </div>
+
+  <h3>12.3 Pro 的硬件与验收</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>档位</th><th>硬件</th><th>能做什么</th><th>验收</th></tr></thead>
+      <tbody>
+        <tr><td>最低</td><td>8 核 / 16GB / 无独显</td><td>2048、局部 2048、Draft/Standard</td><td>2048 标准 &lt;10 分钟</td></tr>
+        <tr><td>推荐</td><td>12–16 核 / 32GB / 12GB+ GPU</td><td>4096、Ultra、3D LOD/PBR、批量</td><td>4096 &lt;30 分钟；3D 60fps</td></tr>
+        <tr><td>工作站</td><td>24+ 核 / 64GB / 24GB GPU</td><td>8192、Research、3D Tiles、视频</td><td>8192 小时级；可离线跑</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><strong>Pro 的出口是“高质量资产 + Map Pack”</strong>：它不需要为了云成本降采样，也不需要为了 8 秒牺牲物理。Lite/Web 复用 Pro 的 SeedPack/MapPack，形成“Pro 生产、Lite/Web 分发”的关系。</p>
+
+  <h2 id="lite" class="anchor">13 · Terrain Lite：设备端轻量生成</h2>
+
+  <p>Lite 的目标不是“云端查看器”，而是<strong>在核显/手机上直接生成局部地图</strong>：512–2048 的 2D 地图、低 LOD 3D、语义/标签/风格；质量尽量保持，但把算力、内存、带宽降一个数量级。关键不是“把 GAN 缩小”，而是<strong>把世界骨架预计算，把局部细节在设备上生成</strong>。</p>
+
+  <p class="evidence">Lite 的数学形式见第 15 节：它不是把 Pro 的方程降采样，而是“SeedPack 基场 + 程序化/蒸馏残差”的近似模型；气候/水文是采样而非重算。</p>
+
+  <h3>13.1 架构：SeedPack + LiteEngine</h3>
+
+  <pre><code>SeedPack（几 MB，下载/缓存一次）
+  global/base.webp          512/1024 全球骨架
+  climate.json/biome.webp   温度/降水/群系
+  hydro.geojson             河网/湖泊（简化）
+  style.json                调色/光照/标签规则
+  seed_hash / provenance
+
+LiteEngine（设备端，WebGPU 优先，WASM 回退）
+  → 读取可见区域的 base/climate/hydro
+  → 局部细节：分形/海岸 SDF/轻侵蚀/河网叠加
+  → 可选：蒸馏 tiny U-Net（INT8/FP16）
+  → 风格/LUT/标签/矢量
+  → 2D canvas / 低 LOD 3D mesh</code></pre>
+
+  <p><strong>不在设备上跑的东西：</strong>450 Myr 板块、全量 GAN、4096 物理后处理、全局 CDF/去斑。它们属于 Pro/CI；Lite 只做“最后 10% 的局部细节”。</p>
+
+  <h3>13.2 轻量生成算法</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>层</th><th>Lite 实现</th><th>质量/成本</th></tr></thead>
+      <tbody>
+        <tr><td>全球骨架</td><td>Pro 预生成 512/1024 base + 气候/河网；设备下载/缓存</td><td>质量高、成本一次性</td></tr>
+        <tr><td>局部地形</td><td>多尺度 fBm/ridged + 海岸 SDF + 2–3 轮轻侵蚀；从 base 采样边界</td><td>接近 Standard 的局部观感；毫秒—秒级</td></tr>
+        <tr><td>可选神经细节</td><td>从 Pro/GAN 蒸馏 tiny U-Net（INT8/FP16，512² 输入）；只做高频残差</td><td>比纯程序化更自然；内存可控</td></tr>
+        <tr><td>水系</td><td>预计算河网 + 局部河宽/蓝度；不做全局 D8</td><td>河流连续；成本低</td></tr>
+        <tr><td>群系/风格</td><td>气候 LUT + 9 群系 + 样式/标签；不重跑 Whittaker 全图</td><td>视觉一致；可切换风格</td></tr>
+        <tr><td>3D</td><td>512/1024 低 LOD heightmap mesh + 法线；可选 glTF 导出</td><td>手机 30fps；不是 Pro 的 PBR 精度</td></tr>
+        <tr><td>语义</td><td>区域/城市/道路/标签来自 SeedPack/GeoJSON；设备只渲染/轻编辑</td><td>Matrees-like 可读性</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>13.3 性能目标（设备端）</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>设备</th><th>地图</th><th>目标耗时</th><th>内存</th><th>备注</th></tr></thead>
+      <tbody>
+        <tr><td>手机（WebGPU）</td><td>512² 局部 2D + 标签</td><td>≤2s</td><td>≤300MB</td><td>首次加载 SeedPack 另计</td></tr>
+        <tr><td>手机（WebGPU）</td><td>1024² 局部 2D</td><td>≤5s</td><td>≤450MB</td><td>可选 tiny U-Net</td></tr>
+        <tr><td>核显笔记本（WebGPU）</td><td>1024² 局部 2D</td><td>≤1.5s</td><td>≤500MB</td><td>WASM 回退约 2–3×</td></tr>
+        <tr><td>核显笔记本（WebGPU）</td><td>2048² 局部 2D</td><td>≤4s</td><td>≤800MB</td><td>Pro 的 2048 质量更高</td></tr>
+        <tr><td>手机 3D</td><td>512/1024 低 LOD</td><td>30fps</td><td>≤500MB</td><td>无 PBR/阴影</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="evidence">这些是目标预算，不是已测得结果。能否达标取决于 WebGPU 实现、SeedPack 大小、tiny U-Net 是否启用、设备散热/内存带宽；建议先做 512² 原型，再逐级解锁 1024/2048。</p>
+
+  <h3>13.4 Lite 的质量边界</h3>
+
+  <ul>
+    <li><strong>能保证：</strong>同一 SeedPack 的海岸/山脉/气候/河网一致；风格/标签/矢量可读；局部 512–2048 的观感接近 Pro 的 Standard（不是 Ultra）。</li>
+    <li><strong>不能保证：</strong>新 seed 的完整 450 Myr 演化；4096/8K 细节；全 PBR 3D；全量 GAN 的纹理丰富度；全局 CDF/气候重算。</li>
+    <li><strong>取舍：</strong>Lite 是“设备端生成 + 预计算骨架”，不是“设备端物理模拟”。它用缓存换速度，用局部细节换真实度上限。</li>
+  </ul>
+
+  <h3>13.5 Lite 与 2C2G 的关系</h3>
+
+  <p>Lite 跑在用户设备上，2C2G 只负责发 SeedPack/manifest/更新/权限；它不承担 Lite 的算力。这样 2C2G 仍可很轻，而手机/核显承担生成。若设备不支持 WebGPU，回退 WASM；再不行才回退到静态瓦片。</p>
+
+  <h2 id="web" class="anchor">14 · Terrain Web：8 秒在线生成</h2>
+
+  <p>Web 是“对标 Matrees 的服务器在线生成”，但目标不是只做一张好看的图，而是把 Terrain 的<strong>物理一致性、时间切片、语义层、3D 导出</strong>带进在线体验。硬指标：<strong>标准 2048 局部 2D + 标签 p50 ≤8s，p95 ≤10s</strong>；缓存命中 &lt;1s。</p>
+
+  <p class="evidence">Web 的模型见第 15 节：它是“SeedPack 基场 + 服务端条件残差生成器”，不是 Pro 的 450 Myr 物理；8 秒是性能模型，不是物理模型。</p>
+
+  <h3>14.1 先定义“8 秒”的口径</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>请求类型</th><th>范围</th><th>目标</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>Web Instant</td><td>2048 局部 2D + 标签/风格</td><td>p50 ≤8s，p95 ≤10s</td><td>服务端生成到可下载图片；不含用户网络下载</td></tr>
+        <tr><td>Cache Hit</td><td>同 seed/region/style/time</td><td>&lt;1s</td><td>直接返回 COS/CDN URL</td></tr>
+        <tr><td>Web Global</td><td>全球 z0/z1 瓦片</td><td>10–20s（异步）</td><td>后台任务 + 进度</td></tr>
+        <tr><td>Web 3D</td><td>3D Tiles/glTF</td><td>30–120s（异步）</td><td>不承诺 8s；走 Pro/worker</td></tr>
+        <tr><td>New Seed</td><td>新 seed 的 450 Myr 全量</td><td>30–180s（异步）</td><td>8s 只适用于已缓存/预计算骨架</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><strong>诚实边界：</strong>8 秒不可能包含“从零跑 450 Myr + 全量 GAN”。8 秒的物理含义是：<strong>SeedPack 骨架已存在/已缓存，服务器只做局部 2048 细节、风格、标签、编码</strong>。新 seed 要么提前预计算，要么走异步队列；否则任何“8 秒生成完整世界”的承诺都是假的。</p>
+
+  <h3>14.2 8 秒流水线</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>阶段</th><th>时间预算</th><th>做法</th></tr></thead>
+      <tbody>
+        <tr><td>鉴权/缓存键</td><td>0.2–0.5s</td><td>seed/region/style/time → hash；命中直接返回 URL</td></tr>
+        <tr><td>骨架加载</td><td>0.2–0.6s</td><td>SeedPack 的 512/1024 base + 气候/河网，内存映射/预热</td></tr>
+        <tr><td>局部细节</td><td>2.5–4s</td><td>局部裁切/重投影 + 分形/海岸/轻侵蚀 + 蒸馏模型高频残差</td></tr>
+        <tr><td>风格/矢量/标签</td><td>1–1.5s</td><td>LUT/山影/群系 + GeoJSON 标签碰撞/栅格化</td></tr>
+        <tr><td>编码/上传</td><td>0.5–1s</td><td>WebP/AVIF；写 COS；生成缩略图</td></tr>
+        <tr><td>网络/排队</td><td>1–2s</td><td>GPU worker 调度、SSE 进度、重试余量</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>合计约 **5.4–9.6s**；要稳定 p95 ≤10s，必须把局部细节控制在 4s 内、标签/编码并行、GPU worker 预热。冷启动、队列积压、超大区域都不在 8s 承诺内。</p>
+
+  <h3>14.3 架构：2C2G 控制面 + GPU worker 计算面</h3>
+
+  <figure class="figure">
+    <svg viewBox="0 0 980 360" role="img" aria-label="Terrain Web 架构：2C2G API、队列、GPU worker、COS/CDN、浏览器、SSE 进度">
+      <defs><marker id="w" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <g font-family="system-ui, sans-serif" font-size="11.5" fill="#171711">
+        <rect x="20" y="30" width="160" height="58" rx="5" fill="#e8f0ed" stroke="#2f6b5e"/>
+        <text x="34" y="52" font-weight="600">浏览器</text>
+        <text x="34" y="70" fill="#5f6156">SSE 进度 / 结果页</text>
+        <rect x="210" y="30" width="160" height="58" rx="5" fill="#fbf3df" stroke="#8a5a00"/>
+        <text x="224" y="52" font-weight="600">2C2G API</text>
+        <text x="224" y="70" fill="#5f6156">鉴权/任务/缓存键</text>
+        <rect x="400" y="30" width="150" height="58" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="414" y="52" font-weight="600">任务队列</text>
+        <text x="414" y="70" fill="#5f6156">DB/外部 Redis</text>
+        <rect x="580" y="30" width="190" height="58" rx="5" fill="#e7eef8" stroke="#2457a6"/>
+        <text x="594" y="52" font-weight="600">GPU worker pool</text>
+        <text x="594" y="70" fill="#5f6156">L4/A10 16GB，预热模型</text>
+        <rect x="800" y="30" width="160" height="58" rx="5" fill="#fff" stroke="#b9bcae"/>
+        <text x="814" y="52" font-weight="600">COS + CDN</text>
+        <text x="814" y="70" fill="#5f6156">结果/瓦片/缩略图</text>
+        <path d="M180 59 H210 M370 59 H400 M550 59 H580 M770 59 H800" stroke="#2f6b5e" stroke-width="1.3" marker-end="url(#w)"/>
+        <path d="M800 100 V160 H180 V100" fill="none" stroke="#2457a6" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#w)"/>
+        <text x="430" y="150" fill="#2457a6">结果 URL / 进度事件</text>
+
+        <rect x="20" y="190" width="450" height="130" rx="5" fill="#fff" stroke="#dfe2d8"/>
+        <text x="36" y="214" font-weight="700">2C2G 只做</text>
+        <text x="36" y="236" fill="#5f6156">• 鉴权、配额、缓存键、任务状态、SSE</text>
+        <text x="36" y="256" fill="#5f6156">• 不发 GPU 请求、不跑 torch、不编码大图</text>
+        <text x="36" y="276" fill="#5f6156">• 结果/瓦片走 COS/CDN</text>
+        <text x="36" y="296" fill="#5f6156">• 2GB 内存足够（约 600–1,200MB 总占用）</text>
+
+        <rect x="490" y="190" width="470" height="130" rx="5" fill="#fbf3df" stroke="#8a5a00" stroke-dasharray="5 4"/>
+        <text x="506" y="214" font-weight="700">GPU worker 做</text>
+        <text x="506" y="236" fill="#5f6156">• 局部 2048 细节/风格/标签；预热模型</text>
+        <text x="506" y="256" fill="#5f6156">• 缓存命中直接返回；未命中才生成</text>
+        <text x="506" y="276" fill="#5f6156">• 4–8 并发/卡；FP16/INT8；批处理</text>
+        <text x="506" y="296" fill="#5f6156">• 新 seed/4K/3D 走异步，不占 8s 预算</text>
+      </g>
+    </svg>
+    <figcaption>2C2G 是控制面；GPU worker 是计算面；COS/CDN 是交付面。8 秒指标只在“骨架已缓存 + 标准 2048 2D”成立。</figcaption>
+  </figure>
+
+  <h3>14.4 如何把 8 秒做稳</h3>
+
+  <ul>
+    <li><strong>预热：</strong>模型/SeedPack 常驻 GPU worker；冷启动不计入 8s；</li>
+    <li><strong>只生成可见区域：</strong>2048 局部，不重算全球；</li>
+    <li><strong>混合渲染：</strong>程序化海岸/分形 + 蒸馏模型高频残差；不跑全量 GAN；</li>
+    <li><strong>风格/标签并行：</strong>栅格细节与 GeoJSON/标签在不同线程/阶段；</li>
+    <li><strong>编码：</strong>WebP/AVIF；缩略图与主图并行；</li>
+    <li><strong>缓存：</strong>seed/region/style/time 哈希；热门区域预生成；命中 &lt;1s；</li>
+    <li><strong>队列：</strong>p95 控制在 10s；超时任务降级为异步，不阻塞前台。</li>
+  </ul>
+
+  <h3>14.5 为什么比 Matrees 更好</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>维度</th><th>Matrees-like 在线地图</th><th>Terrain Web</th></tr></thead>
+      <tbody>
+        <tr><td>生成速度</td><td>秒级，偏地图产品</td><td>8–10s，允许略慢</td></tr>
+        <tr><td>地形一致性</td><td>地图产品/作者控制</td><td>物理骨架 + 可复现 seed/provenance</td></tr>
+        <tr><td>时间/演化</td><td>日历/事件</td><td>时间切片/古地理（异步/可选）</td></tr>
+        <tr><td>语义层</td><td>区域/城市/标签/图层</td><td>同层 + 与地形/时间绑定</td></tr>
+        <tr><td>3D</td><td>globe/WebGL 视图</td><td>3D Tiles/glTF 可导出（异步）</td></tr>
+        <tr><td>视觉</td><td>作者策展/插画</td><td>GAN/风格/标签 + 可接 PSD/手绘</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Web 不在“手绘美术”上硬拼 Matrees；它赢在<strong>同一 seed 的物理一致、时间切片、3D 资产、可复现 provenance</strong>。8–10s 的等待换这些能力，是合理的。</p>
+
+  <h3>14.6 验收与成本控制</h3>
+
+  <div class="grid2">
+    <div class="box"><h4>验收</h4><ul class="tight"><li>标准 2048 2D + 标签：p50 ≤8s，p95 ≤10s；</li><li>缓存命中 &lt;1s；错误率 &lt;1%；</li><li>2C2G 应用 RSS &lt;512MB，总内存 &lt;1.5GB；</li><li>结果 URL/缩略图/SSE 进度可用；</li><li>全球/4K/3D 异步任务 30–120s。</li></ul></div>
+    <div class="box"><h4>成本</h4><ul class="tight"><li>GPU 只处理未命中；热门区域预生成；</li><li>4–8 并发/卡；FP16/INT8；批处理；</li><li>2C2G 只做控制面，不扩容；</li><li>Spot/弹性 GPU；闲时缩容；</li><li>按 seed/region/style 缓存，重复请求近零成本。</li></ul></div>
+  </div>
+
+  <h2 id="models3" class="anchor">15 · 三套数学模型：Pro / Lite / Web 不是同一套公式</h2>
+
+  <p>这是整篇文章最重要、也最容易被误解的一点：<strong>Pro、Lite、Web 不是“同一套模型的不同分辨率”，而是三种不同模型族。</strong>Pro 解/近似物理方程；Lite 用预计算基场 + 设备端程序化/蒸馏残差；Web 用预计算基场 + 服务端条件生成器。它们共享 seed、风格、矢量与 provenance，但不共享同一组演化方程。</p>
+
+  <h3>15.1 Pro：参考模型</h3>
+
+  <p>Pro 的基线公式是第 3–8 节的板块、气候、水文、GAN、渲染方程：450 Myr、D8/粒子侵蚀、Whittaker、全局 CDF 等；Ultra/Research 还叠加第 10.4 节的 Exner、flexure、EBM、GAN loss。它是<strong>参考实现（reference）</strong>，也是 Lite/Web 的训练/验证目标。Pro 的误差来自物理近似与经验参数；Lite/Web 的误差还要加上“对 Pro 的近似误差”。</p>
+
+  <h3>15.2 Lite：SeedPack 基场 + 程序化残差</h3>
+
+  <p>Lite 不做全球模拟，而是把 Pro 生成的全球骨架压缩成 SeedPack，再在设备上生成局部细节：</p>
+
+  <div class="equation">
+    <div class="eq-label">Lite.1 · base + procedural residual</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mi>L</mi></msub><mo>(</mo><mi>x</mi><mo>,</mo><mi>t</mi><mo>)</mo><mo>=</mo><msub><mi>B</mi><mi>s</mi></msub><mo>(</mo><mi>x</mi><mo>,</mo><mi>t</mi><mo>)</mo><mo>+</mo><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>K</mi></munderover><msub><mi>a</mi><mi>k</mi></msub><msub><mi>N</mi><mi>k</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>+</mo><msub><mi>R</mi><mi>φ</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">z_L(x,t)=B_s(x,t)+\sum_{k=1}^{K}a_kN_k(x)+R_arphi(x)</annotation></semantics></math>
+    <div class="eq-note">B_s 是从 SeedPack 双线性/样条采样的基场；N_k 是多尺度 fBm/ridged 噪声；R_φ 是可选的蒸馏 tiny U-Net 高频残差；a_k 由坡度/群系/海岸距离调制。没有 450 Myr、没有全球 GAN、没有全局 CDF。</div>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Lite.2 · coast SDF blend</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mi>s</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mi>signedDist</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>coast</mi><mo>)</mo><mo>,</mo><mspace width="0.4em"/><mi>w</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mi>clip</mi><mo>(</mo><mfrac><mrow><msub><mi>d</mi><mi>s</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mi>ε</mi></mfrac><mo>,</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">d_s(x)=\mathrm{signedDist}(x,\mathrm{coast}),\quad w(x)=\mathrm{clip}\left(rac{d_s(x)}{arepsilon},0,1
+ight)</annotation></semantics></math>
+    <div class="eq-note">用符号距离场做海岸抗锯齿/浅滩过渡；ε 控制过渡带宽度。它替代 Pro 的全局海岸锐化 + 陆架剖面，成本低但只保证局部连续。</div>
+  </div>
+
+  <p>Lite 的水文不是重跑 D8：它读取 SeedPack 的河网/湖泊骨架，只做局部河宽/蓝度/简单下切；气候不是重算，而是采样预计算的 T/P/群系。时间用预计算切片插值（见 15.4），不是模拟。</p>
+
+  <h3>15.3 Web：SeedPack 基场 + 服务端条件生成器</h3>
+
+  <p>Web 比 Lite 多一个服务端 GPU，因此可以用更强的条件生成器，但<strong>仍然不跑 450 Myr</strong>：</p>
+
+  <div class="equation">
+    <div class="eq-label">Web.1 · conditional residual generator</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mi>W</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><msub><mi>B</mi><mi>s</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>+</mo><msub><mi>G</mi><mi>φ</mi></msub><mo>(</mo><mi>c</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>,</mo><mi>ε</mi><mo>)</mo><mo>,</mo><mspace width="0.5em"/><mi>c</mi><mo>=</mo><mo>(</mo><msub><mi>B</mi><mi>s</mi></msub><mo>,</mo><mi>climate</mi><mo>,</mo><mi>hydro</mi><mo>,</mo><mi>style</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">z_W(x)=B_s(x)+G_arphi(c(x),arepsilon),\quad c=(B_s,\mathrm{climate},\mathrm{hydro},\mathrm{style})</annotation></semantics></math>
+    <div class="eq-note">G_φ 是从 Pro/全量 GAN 蒸馏/微调的条件生成器；它只生成局部 2048 细节，不做全球后处理；输入条件来自 SeedPack。Web 的质量高于 Lite，低于 Pro。</div>
+  </div>
+
+  <div class="equation">
+    <div class="eq-label">Web.2 · 8s budget model</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>T</mi><mi>web</mi></msub><mo>≈</mo><msub><mi>T</mi><mi>lookup</mi></msub><mo>+</mo><msub><mi>T</mi><mi>base</mi></msub><mo>+</mo><msub><mi>T</mi><mi>tile</mi></msub><mo>+</mo><msub><mi>T</mi><mi>style</mi></msub><mo>+</mo><msub><mi>T</mi><mi>encode</mi></msub></mrow><annotation encoding="application/x-tex">T_{web}pprox T_{lookup}+T_{base}+T_{tile}+T_{style}+T_{encode}</annotation></semantics></math>
+    <div class="eq-note">这是性能模型，不是物理模型。p50 ≤8s、p95 ≤10s 仅对“已缓存 SeedPack + 标准 2048 局部 2D”成立；新 seed/4K/3D 不在这个预算里。</div>
+  </div>
+
+  <h3>15.4 时间：模拟 vs 插值 vs 预计算</h3>
+
+  <div class="equation">
+    <div class="eq-label">Time · slice interpolation</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>z</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><mo>(</mo><mn>1</mn><mo>−</mo><mi>α</mi><mo>)</mo><msub><mi>z</mi><mi>i</mi></msub><mo>+</mo><mi>α</mi><msub><mi>z</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>,</mo><mspace width="0.5em"/><mi>α</mi><mo>=</mo><mfrac><mrow><mi>t</mi><mo>−</mo><msub><mi>t</mi><mi>i</mi></msub></mrow><mrow><msub><mi>t</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>−</mo><msub><mi>t</mi><mi>i</mi></msub></mrow></mfrac></mrow><annotation encoding="application/x-tex">z(t)=(1-lpha)z_i+lpha z_{i+1},\quad lpha=rac{t-t_i}{t_{i+1}-t_i}</annotation></semantics></math>
+    <div class="eq-note">Pro 直接模拟；Lite/Web 只对预计算时间切片做插值。插值不是演化，不能替代 450 Myr 的物理过程；它的价值是“时间滑杆”而不是“新历史”。</div>
+  </div>
+
+  <h3>15.5 误差定义：如何公平比较</h3>
+
+  <div class="equation">
+    <div class="eq-label">Approximation error</div>
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>e</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><msub><mi>z</mi><mi>A</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>−</mo><msub><mi>z</mi><mi>P</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>,</mo><mspace width="0.4em"/><msub><mi>E</mi><mi>RMSE</mi></msub><mo>=</mo><msqrt><mrow><mfrac><mn>1</mn><mi>N</mi></mfrac><munder><mo>∑</mo><mi>x</mi></munder><msup><mi>e</mi><mo>2</mo></msup><mo>(</mo><mi>x</mi><mo>)</mo></mrow></msqrt></mrow><annotation encoding="application/x-tex">e(x)=z_A(x)-z_P(x),\quad E_{\mathrm{RMSE}}=\sqrt{rac{1}{N}\sum_x e^2(x)}</annotation></semantics></math>
+    <div class="eq-note">A 为 Lite 或 Web，P 为 Pro。必须在同一 seed、同一区域、同一投影、同一尺寸下比较；否则“看起来差不多”没有意义。建议同时报告 RMSE/SSIM/海岸线偏移/河流连续性 + 盲评 rubric。</div>
+  </div>
+
+  <h3>15.6 三者模型对照</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>层</th><th>Pro</th><th>Lite</th><th>Web</th></tr></thead>
+      <tbody>
+        <tr><td>演化</td><td>450 Myr / 720 步真实模拟</td><td>不模拟；SeedPack 预计算 + 时间插值</td><td>不模拟；SeedPack 预计算 + 条件生成</td></tr>
+        <tr><td>基场</td><td>2048/4096 全球</td><td>512/1024 SeedPack</td><td>1024/2048 SeedPack</td></tr>
+        <tr><td>细节</td><td>全量 GAN + 侵蚀/河网</td><td>fBm/ridged + 海岸 SDF + 轻侵蚀；可选 tiny U-Net</td><td>蒸馏条件生成器 + 局部 2048 细节</td></tr>
+        <tr><td>气候</td><td>温度/降水/Whittaker 全算</td><td>采样预计算 T/P/群系 LUT</td><td>采样 + 风格化，不重算气候</td></tr>
+        <tr><td>水文</td><td>D8 + 粒子侵蚀 + 干流雕刻</td><td>预计算河网 + 局部河宽/蓝度</td><td>预计算河网 + 局部下切/渲染</td></tr>
+        <tr><td>后处理</td><td>全局 CDF/去斑/直方图</td><td>局部边界混合，无全局 CDF</td><td>局部边界混合 + 缓存</td></tr>
+        <tr><td>时间</td><td>真模拟时间切片</td><td>预计算切片插值</td><td>预计算切片（异步）/插值</td></tr>
+        <tr><td>3D</td><td>4 级 LOD / PBR / 3D Tiles</td><td>512/1024 低 LOD mesh</td><td>3D Tiles（异步，不占 8s）</td></tr>
+        <tr><td>验证</td><td>物理/形态指标</td><td>对 Pro 的 RMSE/SSIM/盲评</td><td>对 Pro 的 RMSE/SSIM/盲评</td></tr>
+        <tr><td>硬件/时延</td><td>工作站，分钟—小时</td><td>手机/核显，2–5s</td><td>GPU worker，8–10s</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn"><p><strong>不要把 Lite/Web 说成“Pro 的低分辨率版”。</strong>它们共享基场与风格，但模型族不同：Lite 是程序化/蒸馏残差，Web 是条件生成器；它们都不解 450 Myr、都不重算全球气候。正确说法是“Pro 的 amortized approximation（摊销近似）”。</p></div>
+
+  <details><summary>LaTeX 源码 · Lite/Web 模型公式</summary><pre><code>% Lite.1
+z_L(x,t)=B_s(x,t)+\sum_{k=1}^{K}a_kN_k(x)+R_\varphi(x)
+% Lite.2
+d_s(x)=\mathrm{signedDist}(x,\mathrm{coast}),\quad
+w(x)=\mathrm{clip}\left(\frac{d_s(x)}{\varepsilon},0,1\right)
+% Web.1
+z_W(x)=B_s(x)+G_\varphi(c(x),\varepsilon),\quad
+c=(B_s,\mathrm{climate},\mathrm{hydro},\mathrm{style})
+% Web.2
+T_{web}\approx T_{lookup}+T_{base}+T_{tile}+T_{style}+T_{encode}
+% Time
+z(t)=(1-\alpha)z_i+\alpha z_{i+1},\quad
+\alpha=\frac{t-t_i}{t_{i+1}-t_i}
+% Error
+e(x)=z_A(x)-z_P(x),\quad
+E_{\mathrm{RMSE}}=\sqrt{\frac{1}{N}\sum_x e^2(x)}</code></pre></details>
+
+  <h2 id="ship" class="anchor">16 · 三产品路线与验收</h2>
+
+  <h3>15.1 路线图</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>阶段</th><th>周期</th><th>交付</th><th>验收</th></tr></thead>
+      <tbody>
+        <tr><td>P0 共享格式</td><td>2–3 周</td><td>SeedPack/MapPack schema；Pro 打包；Lite/Web 读取</td><td>同一 Pack 在 Pro/Lite/Web 打开；hash 可验证</td></tr>
+        <tr><td>P1 Pro</td><td>6–8 周</td><td>4096/8192、3D LOD/PBR、Studio、批量、导出</td><td>4096 &lt;30min；3D 60fps；8K 可打印</td></tr>
+        <tr><td>P2 Lite</td><td>6–8 周</td><td>WebGPU/WASM LiteEngine；SeedPack；512–2048；低 LOD 3D</td><td>手机 512² ≤2s；核显 2048² ≤4s；内存达标</td></tr>
+        <tr><td>P3 Web</td><td>8–10 周</td><td>2C2G API + GPU worker；8s 标准 2048 2D；SSE；缓存</td><td>p50 ≤8s；p95 ≤10s；缓存 &lt;1s</td></tr>
+        <tr><td>P4 压测</td><td>2–3 周</td><td>2C2G 压测、GPU 并发、降级/超时</td><td>2C2G 稳定；无 OOM；任务不丢</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>15.2 不要做</h3>
+
+  <div class="scroll">
+    <table class="wide-table">
+      <thead><tr><th>不要</th><th>原因</th><th>替代</th></tr></thead>
+      <tbody>
+        <tr><td>在 2C2G 上跑 torch/GAN/450 Myr</td><td>OOM/超时</td><td>Pro/CI/GPU worker</td></tr>
+        <tr><td>承诺“8 秒从零生成完整世界”</td><td>物理上做不到</td><td>8s 仅限缓存骨架 + 局部 2D</td></tr>
+        <tr><td>在手机上跑全量 GAN/4096</td><td>内存/带宽/散热</td><td>SeedPack + LiteEngine + 512/1024</td></tr>
+        <tr><td>在 2C2G 上跑 Postgres+Redis+Celery+Yjs 全家桶</td><td>2GB 不够</td><td>SQLite/外部 DB；SSE/外部 realtime</td></tr>
+        <tr><td>把标签烘焙进瓦片</td><td>放大糊/换语言重烘</td><td>屏幕空间标签</td></tr>
+        <tr><td>一开始就做完整编辑器</td><td>范围爆炸</td><td>先 Feature CRUD + 图层 + 时间滑杆</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="quote">Pro 追求<strong>真实度上限</strong>，Lite 追求<strong>设备端可用</strong>，Web 追求<strong>8–10 秒的在线产品体验</strong>。三者共用 SeedPack/MapPack 和同一套风格/语义；区别是算力放在哪里。<small>不要用 2C2G 的预算要求 Pro，也不要用 Pro 的物理要求 Lite/Web。</small></div>
+
+  <h2 id="latex" class="anchor">17 · LaTeX 源码与 Python 源码索引</h2>
+
+  <p>下面每个公式都对应页面中的 MathML；可直接复制到 KaTeX/LaTeX。若你要在 Markdown/论文中使用，把 <code>\mathrm{}</code> 换成 <code>\operatorname{}</code> 或自定义宏即可。</p>
+
+  <details><summary>LaTeX 源码 · Eq. 1–6（板块）</summary><pre><code>% Eq.1
+r=(\cos\varphi\cos\lambda,\ \cos\varphi\sin\lambda,\ \sin\varphi)
+% Eq.2
+v_k(r)=\omega_k\,(a_k\times r)
+% Eq.3
+q=R(a_k,-\omega_k\Delta t)\,r,\quad \mathrm{source}=\mathrm{index}(q)
+% Eq.4
+u=c-(c\cdot p)p,\quad \mathrm{axis}=\frac{p\times u}{|p\times u|},\quad
+\omega_k=\mathrm{clip}\left(\frac{\mathrm{angle}(p,c)}{H\Delta t}\right)(1+\varepsilon)
+% Eq.5
+\Delta v=v_A-v_B,\quad
+n=\frac{r_B-r_A}{|r_B-r_A|},\quad
+c_n=-\Delta v\cdot n,\quad
+s=\sqrt{c_n^2+|\Delta v-c_n n|^2}
+% Eq.6
+\mathrm{convergent\ if\ }c_n&gt;0.35s,\quad
+\mathrm{divergent\ if\ }c_n&lt;-0.35s</code></pre></details>
+
+  <details><summary>LaTeX 源码 · Eq. 7–12（装配与 GAN）</summary><pre><code>% Eq.7
+m_t=\tanh\left(\frac{G_\sigma(\mathrm{orog})}{o_s}\right),\quad
+z=220+430f_1+4900m_t(0.72+0.56f_3)
+% Eq.8
+r_k=\frac{\mathrm{rank}(A_i)}{N-1},\quad
+z_{oc}=\mathrm{interp}(r_k,Q,V)
+% Eq.9
+z_{tr}\approx-(6800+900\,\mathrm{spd})-2800e^{-(d/1.0)^2},\quad
+z_{hot}\approx 7200\tanh(2.8v)
+% Eq.10
+G(z\mid c)\rightarrow x',\quad c\in\mathbb{R}^{12\times H\times W}
+% Eq.11
+\mathrm{tile}=256,\ \mathrm{stride}=208,\ \mathrm{overlap}=48,\
+N_{2048}=10^2,\ N_{4096}=20^2
+% Eq.12
+x'=F_{\mathrm{ref}}^{-1}\big(F_{\mathrm{raw}}(x)\big)</code></pre></details>
+
+  <details><summary>LaTeX 源码 · Eq. 13–16（气候）</summary><pre><code>% Eq.13
+T=29-(0.05|\varphi|+0.006\varphi^2)-6.5\frac{z}{1000}
++\Delta T_{CI}+\Delta T_{sub}-\mathrm{ice}_{cool}
+% Eq.14
+CI=(1-e^{-d_{sea}/1800})(0.55+0.45\,\mathrm{clip}((|\varphi|-15)/75,0,1))
+% Eq.15
+P=P_{lat}(\varphi)\cdot O(\mathrm{wind},\nabla z)\cdot(1-0.55CI)
+\cdot e^{-d_{inland}/L}\cdot C
+% Eq.16
+B=W(T,P,CI),\quad
+z_{snow}=\mathrm{interp}(|\varphi|,L_{lat},M_{lat})+800(1-P/700)</code></pre></details>
+
+  <details><summary>LaTeX 源码 · Eq. 17–22（水文/渲染）</summary><pre><code>% Eq.17
+d(i)=\underset{j}{\operatorname{argmax}}\frac{z_i-z_j}{L_{ij}},\quad
+L_{ij}\in\{1,\sqrt{2}\}
+% Eq.18
+A_i=s_i+\sum_{j:\,d(j)=i}A_j
+% Eq.19
+W\propto A^{0.5},\quad S\propto A^{-\theta},\quad \theta\approx0.4-0.5
+% Eq.20
+C_{cap}=\max(-\Delta h,s_{min})\cdot water\cdot capacity,\quad capacity=4.0
+% Eq.21
+h_s=\mathrm{clip}(0.88-22(g_x+g_y),0.60,1.15),\quad
+shade=(0.78+0.55z_n)(0.72+0.28h_s)
+% Eq.22
+n_{ij}=\mathrm{normalize}\left(-\frac{\partial z}{\partial x},-\frac{\partial z}{\partial y},1\right)</code></pre></details>
+
+  <details><summary>LaTeX 源码 · Opt. 1–4（优化公式）</summary><pre><code>% Opt.1
+\frac{\partial \eta}{\partial t}=U-\nabla\cdot q_s,\quad q_s=KQ^mS^n
+% Opt.2
+D\nabla^4w+\rho_mgw=q,\quad D=\frac{ET_e^3}{12(1-\nu^2)}
+% Opt.3
+C\frac{\partial T}{\partial t}=S(1-\alpha)-(A+BT)+D\nabla^2T
+% Opt.4
+L=L_{adv}+\lambda_{rec}L_{rec}+\lambda_sL_{slope}+\lambda_fL_{flow}+\lambda_tL_{tile}</code></pre></details>
+
+  <h3>17.1 Python 源码索引</h3>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>主题</th><th>函数</th><th>文件</th></tr></thead>
+      <tbody>
+        <tr><td>欧拉旋转/后向映射</td><td><code>_rot</code>、<code>run_plate_sim</code> 主循环</td><td><code>terrain/core/plate_sim.py</code></td></tr>
+        <tr><td>边界分类</td><td><code>_classify</code></td><td><code>terrain/core/plate_sim.py</code></td></tr>
+        <tr><td>终局高程</td><td><code>run_plate_sim</code> 尾部 <code>e_ld</code></td><td><code>terrain/core/plate_sim.py</code></td></tr>
+        <tr><td>GAN 瓦片</td><td><code>generate_world</code> 的 tile 循环</td><td><code>terrain/core/generate_world.py</code></td></tr>
+        <tr><td>温度/降水</td><td><code>temperature_field</code>、<code>precipitation_field</code></td><td><code>terrain/modules/climate_module.py</code></td></tr>
+        <tr><td>D8/粒子侵蚀</td><td><code>d8_flow_accumulation</code>、<code>droplet_erosion</code></td><td><code>terrain/modules/hydro_module.py</code></td></tr>
+        <tr><td>渲染/3D</td><td><code>render_world</code>、<code>export_world</code></td><td><code>terrain/core/generate_world.py</code>、<code>export_3d.py</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="footnote">边界说明：公开仓库缺 <code>checkpoints/</code>、<code>data/</code>、<code>output/</code>，本机未运行生成器；本文是源码/文档/公式级分析，不是对某张输出图的像素级评测。公式以 LaTeX 编写，页面用原生 MathML 离线排版；每个 MathML 都带 <code>application/x-tex</code> 注解。</p>
+
+</main>
+</body>
+</html>

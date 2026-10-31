@@ -1,0 +1,12 @@
+{
+  "precip_offset_0-10": -357.5,
+  "peak_boost": 200.0,
+  "trench_deepen": -200.0,
+  "temp_offset_50-66.5": 4.27,
+  "temp_offset_66.5-90": 7.94,
+  "precip_offset_30-50": -91.8,
+  "precip_offset_50-66.5": -92.0,
+  "sea_level_shift": 0.02,
+  "precip_offset_66.5-90": -39.6,
+  "precip_offset_10-30": 121.1
+}

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terrain Lite — 浏览器端小地图</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0a0c10; --panel: #12151b; --line: #232833;
+    --ink: #d8dde5; --dim: #8a93a2; --faint: #5b6472; --accent: #72a7ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink); overflow: hidden;
+    font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  #app { position: fixed; inset: 0; display: flex; }
+  #stage {
+    position: relative; flex: 1; display: grid; place-items: center;
+    background: #06080b; overflow: hidden;
+  }
+  #map {
+    display: block; max-width: 100%; max-height: 100%;
+    box-shadow: 0 0 0 1px var(--line), 0 18px 60px rgba(0, 0, 0, .7);
+    cursor: grab; touch-action: none; image-rendering: auto;
+  }
+  #map.dragging { cursor: grabbing; }
+  #hud {
+    position: absolute; top: 14px; left: 14px; min-width: 268px;
+    padding: 10px 12px; background: rgba(10, 12, 16, .82);
+    border: 1px solid var(--line); border-radius: 6px; backdrop-filter: blur(6px);
+  }
+  #hud div { display: flex; justify-content: space-between; gap: 18px; white-space: nowrap; }
+  #hud .k { color: var(--faint); }
+  #hud .v { color: var(--ink); font-variant-numeric: tabular-nums; }
+  #hud .v.acc { color: var(--accent); }
+  #controls {
+    position: absolute; top: 14px; right: 14px; width: 210px; padding: 10px 12px;
+    background: rgba(10, 12, 16, .82); border: 1px solid var(--line);
+    border-radius: 6px; backdrop-filter: blur(6px);
+  }
+  #controls label { display: flex; justify-content: space-between; align-items: center; margin: 6px 0; color: var(--dim); }
+  #controls select {
+    background: #1a1f28; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 4px; padding: 2px 4px; font: inherit;
+  }
+  #sizes { display: flex; gap: 6px; margin: 8px 0 10px; }
+  #sizes button, #rerender {
+    flex: 1; padding: 4px 0; font: inherit; color: var(--dim); cursor: pointer;
+    background: #161a21; border: 1px solid var(--line); border-radius: 4px;
+  }
+  #sizes button.on { color: #08111f; background: var(--accent); border-color: var(--accent); }
+  #rerender { width: 100%; color: var(--ink); }
+  #sizes button:hover, #rerender:hover { border-color: var(--accent); }
+  #hint {
+    position: absolute; left: 14px; bottom: 12px; color: var(--faint);
+    font-size: 12px; letter-spacing: .02em;
+  }
+  #drop {
+    position: absolute; inset: 0; display: none; place-items: center;
+    background: rgba(8, 14, 26, .86); border: 2px dashed var(--accent);
+    color: var(--accent); font-size: 15px;
+  }
+  #drop.on { display: grid; }
+  #err { position: absolute; bottom: 12px; right: 14px; color: #ff8a8a; font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="map" width="512" height="512"></canvas>
+    <div id="hud"></div>
+    <div id="controls">
+      <div id="sizes">
+        <button data-size="512">512</button>
+        <button data-size="1024">1024</button>
+        <button data-size="2048">2048</button>
+      </div>
+      <label>质量 <select id="quality">
+        <option value="fast">fast</option>
+        <option value="balanced" selected>balanced</option>
+        <option value="high">high</option>
+      </select></label>
+      <button id="rerender">重新渲染</button>
+    </div>
+    <div id="hint">拖拽平移 · 滚轮缩放 · 拖入 .seedpack 换包</div>
+    <div id="drop">松开以载入 .seedpack</div>
+    <div id="err"></div>
+  </div>
+</div>
+
+<script type="module">
+import { loadSeedPack } from './seedpack.js';
+import { LiteEngine } from './lite_engine.js';
+
+const $ = (id) => document.getElementById(id);
+const canvas = $('map');
+const hud = $('hud');
+const errBox = $('err');
+
+const state = {
+  pack: null, engine: null,
+  size: 512, quality: 'balanced',
+  cx: 0.5, cy: 0.5, zoom: 1,
+  loadMs: null, firstMs: null, lastMs: null, backend: '-',
+  busy: false, queued: false,
+};
+
+const fmt = (n, d = 1) => (n == null ? '—' : Number(n).toFixed(d));
+const mb = (bytes) => (bytes == null ? '—' : (bytes / 1048576).toFixed(2) + ' MB');
+
+function renderHud(stats) {
+  const p = state.pack;
+  const mem = performance.memory ? mb(performance.memory.usedJSHeapSize) : 'N/A';
+  const rows = [
+    ['seedpack', `${p.size}² · ${mb(p.bytes)}`],
+    ['pack_hash', (p.packHash || '').slice(0, 12)],
+    ['载入', fmt(state.loadMs) + ' ms'],
+    ['首次渲染', fmt(state.firstMs) + ' ms'],
+    ['最近渲染', fmt(state.lastMs) + ' ms'],
+    ['后端', state.backend],
+    ['视图', `${state.size}² · ${state.quality} · ×${state.zoom.toFixed(2)}`],
+    ['中心', `${state.cx.toFixed(3)}, ${state.cy.toFixed(3)}`],
+    ['陆地/群系', stats ? `${(stats.land_frac * 100).toFixed(1)}% · ${stats.biome_count}` : '—'],
+    ['河网像素', stats ? stats.river_pixels : '—'],
+    ['海拔', stats ? `${Math.round(stats.height_min)} … ${Math.round(stats.height_max)} m` : '—'],
+    ['JS 堆', mem],
+  ];
+  hud.innerHTML = rows.map(([k, v], i) =>
+    `<div><span class="k">${k}</span><span class="v${i === 5 ? ' acc' : ''}">${v}</span></div>`
+  ).join('');
+}
+
+// ---------- 渲染调度 ----------
+let pending = false;
+async function draw() {
+  if (!state.engine) return;
+  if (state.busy) { state.queued = true; return; }
+  state.busy = true;
+  const t0 = performance.now();
+  try {
+    const res = await state.engine.render({
+      size: state.size, quality: state.quality,
+      cx: state.cx, cy: state.cy, zoom: state.zoom,
+    });
+    state.lastMs = res.ms;
+    if (state.firstMs == null) state.firstMs = res.ms;
+    state.backend = res.backend;
+    errBox.textContent = '';
+    renderHud(res.stats);
+  } catch (err) {
+    console.error(err);
+    errBox.textContent = String(err.message || err);
+  } finally {
+    state.busy = false;
+    if (state.queued) { state.queued = false; draw(); }
+  }
+}
+function schedule() {
+  if (pending) return;
+  pending = true;
+  requestAnimationFrame(() => { pending = false; draw(); });
+}
+
+// ---------- 载入 pack ----------
+async function usePack(source) {
+  errBox.textContent = '';
+  try {
+    const pack = await loadSeedPack(source);
+    state.pack = pack;
+    state.loadMs = pack.loadMs;
+    state.firstMs = null;
+    state.cx = 0.5; state.cy = 0.5; state.zoom = 1;
+    state.engine = new LiteEngine(pack, { canvas, webgpu: !/[?&]gpu=0/.test(location.search) });
+    renderHud(null);
+    await draw();
+  } catch (err) {
+    console.error(err);
+    errBox.textContent = '载入失败：' + (err.message || err);
+  }
+}
+
+// ---------- 交互 ----------
+const toBacking = (clientX, clientY) => {
+  const r = canvas.getBoundingClientRect();
+  return { u: (clientX - r.left) / r.width, v: (clientY - r.top) / r.height, scale: canvas.width / r.width };
+};
+
+let drag = null;
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  canvas.classList.add('dragging');
+  drag = { x: e.clientX, y: e.clientY, cx: state.cx, cy: state.cy };
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const k = toBacking(e.clientX, e.clientY).scale;
+  state.cx = Math.min(1, Math.max(0, drag.cx - ((e.clientX - drag.x) * k / state.size) / state.zoom));
+  state.cy = Math.min(1, Math.max(0, drag.cy - ((e.clientY - drag.y) * k / state.size) / state.zoom));
+  schedule();
+});
+const endDrag = () => { drag = null; canvas.classList.remove('dragging'); };
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const { u, v } = toBacking(e.clientX, e.clientY);
+  const wx = state.cx + (u - 0.5) / state.zoom;
+  const wy = state.cy + (v - 0.5) / state.zoom;
+  state.zoom = Math.min(64, Math.max(0.05, state.zoom * Math.exp(-e.deltaY * 0.0015)));
+  state.cx = Math.min(1, Math.max(0, wx - (u - 0.5) / state.zoom));
+  state.cy = Math.min(1, Math.max(0, wy - (v - 0.5) / state.zoom));
+  schedule();
+}, { passive: false });
+
+$('sizes').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-size]');
+  if (!btn) return;
+  state.size = Number(btn.dataset.size);
+  for (const b of $('sizes').children) b.classList.toggle('on', b === btn);
+  schedule();
+});
+$('quality').addEventListener('change', (e) => { state.quality = e.target.value; schedule(); });
+$('rerender').addEventListener('click', () => draw());
+
+// 拖放换包
+const drop = $('drop');
+const stage = $('stage');
+window.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('on'); });
+window.addEventListener('dragleave', (e) => { if (!e.relatedTarget) drop.classList.remove('on'); });
+window.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  drop.classList.remove('on');
+  const file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (file) await usePack(await file.arrayBuffer());
+});
+
+// ---------- 启动 ----------
+for (const b of $('sizes').children) b.classList.toggle('on', Number(b.dataset.size) === state.size);
+const packUrl = new URLSearchParams(location.search).get('pack') || 'demo.seedpack';
+usePack(new URL(packUrl, location.href).href);
+</script>
+</body>
+</html>
