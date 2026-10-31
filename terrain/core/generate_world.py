@@ -46,6 +46,7 @@ from .terrain_engine import (device, m2v, v2m, block_reduce, d8_flow_accumulatio
                             continentality_index,
                             enhance_ocean_floor)
 from .plate_sim import run_plate_sim
+from .cache_keys import plate_cache_path
 
 
 def fbm1d(n, sigma, rng):
@@ -4471,7 +4472,8 @@ def generate_world(seed=0, size_px=2048, ckpt_path=None,
     四大阶段（1/4 → 4/4）：
         1. 板块演化模拟（``plate_sim.run_plate_sim``，450 Myr，有缓存）：
            返回粗分辨率构造骨架 ``elev_T, tect_T, crust_T, margin_T, belt_T, rift_T``。
-           命中缓存（``cache/plate_sim_v3_T{tect_res}_seed{seed}.npz``）时可从
+           命中缓存（``cache/plate_sim_v{N}_T{tect_res}_seed{seed}.npz``，N 见
+           :data:`terrain.core.cache_keys.PLATE_CACHE_VERSION`）时可从
            2~4 分钟缩到 < 10s。
         2. 像素级骨架细化：周期 fBm 域扭曲（消 Voronoi 直线感）+ 上采样到
            ``size_px`` + 海岸分形级联（D≈1.3）+ 山脉/盆地 + **v6.6 七大
@@ -4543,8 +4545,8 @@ def generate_world(seed=0, size_px=2048, ckpt_path=None,
 
     print(f"[1/4] 板块演化模拟 (T={tect_res}, 450 Myr, 有缓存)...")
     _stage_t0 = time.time()
-    # v4: 大陆形态重塑 (_reshape_continents) 改变了 crustm 轮廓, 旧缓存几何作废
-    cache = os.path.join(_dir, "cache", f"plate_sim_v4_T{tect_res}_seed{seed}.npz")
+    # 缓存键由 PLATE_CACHE_VERSION 统一生成；增版本即让旧几何自然失效
+    cache = plate_cache_path(_dir, tect_res, seed)
     if os.path.exists(cache):
         d = np.load(cache)
         elev_T, tect_T, crust_T = d["elev"], d["tect"], d["crust"]

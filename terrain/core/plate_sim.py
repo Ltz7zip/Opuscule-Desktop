@@ -26,6 +26,7 @@ from scipy.ndimage import (gaussian_filter, distance_transform_edt,
                            binary_erosion as ndi_binary_erosion,
                            binary_closing, binary_opening, uniform_filter)
 from .tectonics import proximity_fields
+from .cache_keys import plate_cache_path
 
 # 地球开阔洋 (深度≤-1000m, 占海洋84.6%) 高程分位数 —— ETOPO1(Ice) 2048 实测
 _OC_Q = np.arange(0, 1.0001, 0.025)
@@ -1354,7 +1355,7 @@ def main():
     os.makedirs(os.path.join(_dir, "cache"), exist_ok=True)
     os.makedirs(os.path.join(_dir, "output"), exist_ok=True)
     elev, tect, landm, margin, belt, rift = run_plate_sim(T=a.T, seed=a.seed)
-    np.savez_compressed(os.path.join(_dir, "cache", f"plate_sim_v3_T{a.T}_seed{a.seed}.npz"),
+    np.savez_compressed(plate_cache_path(_dir, a.T, a.seed),
                         elev=elev, tect=tect, crust=landm, margin=margin,
                         belt=belt, rift=rift)
     from .terrain_engine import m2v, make_terrain_cmap, render_snow_field

@@ -22,6 +22,8 @@ from terrain.core.terrain_engine import (m2v, snowline_m, d8_flow_accumulation,
                             precipitation_field, whittaker_biome,
                             periodic_fbm, warp_lonlat, _psd_slope,
                             _fractal_dim, ocean_current_effects)
+from terrain.core.cache_keys import plate_cache_path
+from terrain.core.plate_sim import run_plate_sim
 
 _file_dir = os.path.dirname(os.path.abspath(__file__))
 _dir = (os.path.dirname(_file_dir)
@@ -203,8 +205,15 @@ def load_earth_conv():
 
 def sim_conv(seed):
     """复现 generate_world 的域扭曲, 取 t1 俯冲/碰撞场"""
-    d = np.load(os.path.join(_dir, "cache", f"plate_sim_v3_T512_seed{seed}.npz"))
-    tect = d["tect"]
+    cache = plate_cache_path(_dir, 512, seed)
+    if os.path.exists(cache):
+        tect = np.load(cache)["tect"]
+    else:
+        # 缓存缺失时按当前契约重算，避免读到旧几何或直接崩溃
+        os.makedirs(os.path.join(_dir, "cache"), exist_ok=True)
+        elev, tect, landm, margin, belt, rift = run_plate_sim(T=512, seed=seed)
+        np.savez_compressed(cache, elev=elev, tect=tect, crust=landm,
+                            margin=margin, belt=belt, rift=rift)
     rng = np.random.RandomState(seed + 5)
     wxT = periodic_fbm(512, 6.0, 3, rng) * 16.0 + periodic_fbm(512, 20.0, 2, rng) * 4.0
     wyT = periodic_fbm(512, 6.0, 3, rng) * 16.0 + periodic_fbm(512, 20.0, 2, rng) * 4.0

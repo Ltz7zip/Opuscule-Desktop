@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "version": "12.0.0",
+  "assets": [
+    {
+      "path": "terrain/checkpoints/best_terrain_gan_v5.pth",
+      "sha256": "21f13fee982c74e988c2b2fb6fcf0b09b30c783d578132ac0b33e2a8a3a9109a",
+      "bytes": 44416667,
+      "role": "GAN 细节生成器权重",
+      "produced_by": "terrain/core/terrain_engine.py::train (torch.manual_seed(42))"
+    },
+    {
+      "path": "terrain/checkpoints/best_terrain_gan_v5_block8.pth",
+      "sha256": "ba4db2100d647dc983f07d0216e33cb92da68dbdda293cc87cffffeacfe74d47",
+      "bytes": 44416667,
+      "role": "GAN 细节生成器权重",
+      "produced_by": "terrain/core/terrain_engine.py::train (torch.manual_seed(42))"
+    }
+  ]
+}

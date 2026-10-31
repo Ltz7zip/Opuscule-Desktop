@@ -27,6 +27,8 @@ for _p in (_HERE, _CORE, _SCRIPTS):
     if _p and _p not in _sys.path:
         _sys.path.insert(0, _p)
 
+from ._version import __version__          # noqa: E402  版本唯一来源
+
 # ————— 公开符号 —————
 from terrain.core.geo_context import (
     WorldGeoContext as WorldGeoContext,
@@ -60,4 +62,3 @@ __all__ = [
     "WorldEngine", "WorldContext", "BaseModule",
     "TerrainModule", "HydroModule", "TemperatureModule", "ClimateModule",
 ]
-__version__ = "9.1.0"

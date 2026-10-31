@@ -287,7 +287,7 @@ v7.0 的 66.5° 一刀切全冰 → v7.1 改为 66.5°→72° 过渡带，仅
 
 | 文件                                      | 用途                                                                                                                          |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **`terrain/core/plate_sim.py`**         | 【真实实现】板块演化模拟 **v3.0 超大陆旋回**（缓存 `cache/plate_sim_v3_T512_seed*.npz`）                                                         |
+| **`terrain/core/plate_sim.py`**         | 【真实实现】板块演化模拟 **v3.0 超大陆旋回**（缓存 `cache/plate_sim_v4_T512_seed*.npz`）                                                         |
 | **`terrain/core/tectonics.py`**         | 【真实实现】Bird 2003 真实边界 → 构造条件场（训练用，缓存 `cache/tect_cache_*.npz`）                                                               |
 | **`terrain/core/terrain_engine.py`**    | 【真实实现】归一化/气候/侵蚀/后处理/网络/训练 + v6.6 修复层 + v7.0 洋流/季风/冰盖                                                                        |
 | **`terrain/core/generate_world.py`**    | 【真实实现】世界生成主入口（管线编排 + 渲染 + 产物落盘）                                                                                             |
@@ -338,7 +338,7 @@ v7.0 的 66.5° 一刀切全冰 → v7.1 改为 66.5°→72° 过渡带，仅
 
 **改动**: plate\_sim v2.2 → v3.0（三阶段速度场/滞留板块/微大陆/板块切割/共享欧拉轴对旋/
 陆地全局守恒/margin\_type），generate\_world 接入 per-margin 陆架分化（被动 115km 宽陆架 /
-主动 35km 窄陆架），warp 强度 16→11px。缓存 `plate_sim_v3_T512_seed*.npz`。
+主动 35km 窄陆架），warp 强度 16→11px。缓存 `plate_sim_v4_T512_seed*.npz`。
 
 **3 种子验收（vs 真实地球同口径）**:
 
@@ -914,7 +914,7 @@ actual_path, ctx = build_html_report(
 | `--T` / `--res` | `512`                                      | 模拟分辨率（与输出 DEM 的 tect-res 对齐；一般是 size/4）                |
 | `--K`           | `12`                                       | 板块数量（含微大陆 4\~6 块 / MAXP 池 = K+16）                      |
 | `--steps`       | `720`                                      | 演化步数（720 × 0.625 Myr = 450 Myr 总时长）                    |
-| `--out`         | `cache/plate_sim_v3_T{res}_seed{seed}.npz` | 缓存路径（同参数第二次调用直接复用）                                     |
+| `--out`         | `cache/plate_sim_v4_T{res}_seed{seed}.npz` | 缓存路径（同参数第二次调用直接复用）                                     |
 | `--plot`        | `False`                                    | 调试模式：输出 plate\_debug.png（板块 id / orog / rift / margin） |
 
 ### 19.4 其他常见脚本
